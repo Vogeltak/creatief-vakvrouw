@@ -1,0 +1,46 @@
+---
+invoice-nr: 2305
+author: Creatief Vakvrouw
+name: Noemi van der Wurf
+city: Amsterdam
+from:
+- noemi.vanderwurf@gmail.com
+- BTW NL004011638B89
+- KVK 84767383
+to:
+- V.O.F. De Nieuwe Anita
+- Frederik Hendrikstraat 111A
+- 1052HN Amsterdam
+VAT: 21
+service:
+- description: Bar 2023-02-02 (17:00-01:00)
+  price: 144
+- description: Bar 2023-02-03 (18:30-01:00)
+  price: 117
+- description: Deur 2023-02-11 (20:00-01:00)
+  price: 90
+- description: Bar 2023-02-18 (17:00-02:00)
+  price: 162
+- description: Bar 2023-02-24 (20:00-02:00)
+  price: 108
+
+closingnote: |
+  Gelieve het verschuldigde bedrag binnen 14 dagen over te maken naar:
+   
+    N.Z. van der Wurf  
+    IBAN: NL65 INGB 0001 0008 60  
+
+    Met vriendelijke groeten,
+
+# Invoice settings
+currency: EUR
+commasep: true
+lang: nl-NL
+
+# Typography and layout
+seriffont: Liberation Serif
+sansfont: Liberation Sans
+fontsize: 10pt
+geometry: a4paper, left=43mm, right=43mm, top=51mm, bottom=17mm
+# letterhead: true # To include personalized letterheads
+---

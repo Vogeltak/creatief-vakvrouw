@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+        :root {
+            --main-color: #222;
+            --secondary-color: #888;
+            --main-bg-color: white;
+            --secondary-bg-color: #f5f5f5;
+            --tertiary-bg-color: #f0f0f0;
+            --shadow-color: #ddd;
+        }
+        body {
+            background-color: var(--main-bg-color);
+            color: var(--main-color);
+            font-family: "Source Serif Pro", "Georgia", serif;
+            margin: 0;
+        }
+        main {
+            max-width: 700px;
+            margin: auto;
+            padding: 45px 15px;
+        }
+        header {
+            margin-bottom: 64px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .button {
+            border: 1px solid var(--main-color);
+            box-shadow: 4px 4px var(--shadow-color);
+            color: var(--main-color);
+            display: block;
+            padding: 4px 8px;
+            text-decoration: none;
+        }
+        .button:hover:not(.disabled) {
+            background-color: var(--secondary-bg-color);
+        }
+        .button:active:not(.disabled) {
+            background-color: var(--tertiary-bg-color);
+        }
+        .button.disabled {
+            border-color: var(--secondary-color);
+            box-shadow: 2px 2px var(--shadow-color);
+            color: var(--secondary-color);
+        }
+        .portal {
+            display: flex;
+            flex-direction: column;
+            row-gap: 16px;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro&display=swap" rel="stylesheet">
+</head>
+<body>
+    <main>
+        <header>
+            <h1>Creatief Vakvrouw</h1>
+            <p>
+                Portaal naar Noemi's boekhouding en andere administratieve taken.
+                Veel van deze functionaliteit is nog <em>work-in-progress</em> en onderhevig aan verandering.
+            </p>
+        </header>
+        <section class="portal">
+            <a href="#" class="button">Nieuwe factuur (Nieuwe Anita)</a>
+            <a href="#" class="button">Nieuwe factuur</a>
+            <a href="#" class="button disabled">BTW aangifte</a>
+        </section>
+    </main>
+</body>
