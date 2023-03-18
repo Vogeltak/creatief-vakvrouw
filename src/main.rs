@@ -1,40 +1,16 @@
 use chrono::DateTime;
 use clap::Parser;
 use reqwest::Url;
-use serde::Deserialize;
-use serde_json::Value;
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about)]
-struct Cli {
-    #[arg(short, long)]
-    month: String,
-    #[arg(short, long, default_value = "Noemi")]
-    name: String,
-}
+mod cli;
+mod event;
 
-#[derive(Debug, Deserialize)]
-struct Event {
-    #[serde(rename = "event_who_profile_call_name")]
-    person: String,
-    event_type: String,
-    #[serde(rename = "event_date")]
-    date: String,
-    #[serde(rename = "event_start_end_time")]
-    start_to_end: String,
-    #[serde(rename = "event_starts_at")]
-    start: String,
-    #[serde(rename = "event_ends_at")]
-    end: String,
-}
+use event::Event;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = Cli::parse();
+    let arg = cli::Cli::parse();
 
-    // TODO: extract year and month from input, and iterate over weeks
-    // until we've found all events belonging to that month
-
-    let (year, month) = cli.month.split_once('-').unwrap();
+    let (year, month) = arg.month.split_once('-').unwrap();
     let mut week = month.parse::<u32>().unwrap() * 4 - 4;
 
     let mut events: Vec<Event> = vec![];
@@ -53,52 +29,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let res = client.get(url).header("Cookie", cookie).send()?;
 
         let body = res.text()?;
-        let v: Value = serde_json::from_str(&body)?;
+        let v: event::Week = serde_json::from_str(&body)?;
 
-        println!("Got data from {} to {}", v["start_date"], v["end_date"]);
+        println!("Got data from {} to {}", v.start_date, v.end_date);
 
-        events.extend(
-            v["scheduled_events"]
-                .as_array()
-                .unwrap()
-                .get(0)
-                .unwrap()
-                .get("layer_days")
-                .unwrap()
-                .as_array()
-                .unwrap()
-                .iter()
-                .filter(|day| {
-                    day.get("day_key")
-                        .unwrap()
-                        .as_str()
-                        .unwrap()
-                        .starts_with(&cli.month)
-                })
-                .flat_map(|day| day.get("day_events").unwrap().as_array().unwrap().iter())
-                .filter(|&event| {
-                    event
-                        .get("event_who_profile_call_name")
-                        .unwrap()
-                        .as_str()
-                        .unwrap()
-                        == cli.name
-                })
-                .map(|v| serde_json::from_value(v.clone()).unwrap()),
+        events.extend(v.schedule.iter()
+            .flat_map(|r| r.days.clone())
+            .filter(|d| d.date.starts_with(&arg.month))
+            .flat_map(|d| d.events)
+            .filter(|e| e.person == arg.name)
         );
 
         // Break out if we are currently starting in a week that is past the
         // month we were processing.
-        let start_month = v["start_date"]
-            .as_str()
-            .unwrap()
+        let start_month = v.start_date
             .split('-')
             .take(2)
             .last()
             .unwrap();
-        let end_month = v["end_date"]
-            .as_str()
-            .unwrap()
+        let end_month = v.end_date
             .split('-')
             .take(2)
             .last()
