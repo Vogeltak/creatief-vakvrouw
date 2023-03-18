@@ -1,6 +1,7 @@
 use chrono::DateTime;
 use clap::Parser;
 use reqwest::Url;
+use serde::Deserialize;
 use serde_json::Value;
 
 #[derive(Parser, Debug)]
@@ -12,29 +13,19 @@ struct Cli {
     name: String,
 }
 
+#[derive(Debug, Deserialize)]
 struct Event {
+    #[serde(rename = "event_who_profile_call_name")]
     person: String,
     event_type: String,
+    #[serde(rename = "event_date")]
     date: String,
+    #[serde(rename = "event_start_end_time")]
     start_to_end: String,
+    #[serde(rename = "event_starts_at")]
     start: String,
+    #[serde(rename = "event_ends_at")]
     end: String,
-}
-
-impl From<&Value> for Event {
-    fn from(value: &Value) -> Self {
-        Event {
-            person: value["event_who_profile_call_name"]
-                .as_str()
-                .unwrap()
-                .to_owned(),
-            event_type: value["event_type"].as_str().unwrap().to_owned(),
-            date: value["event_date"].as_str().unwrap().to_owned(),
-            start_to_end: value["event_start_end_time"].as_str().unwrap().to_owned(),
-            start: value["event_starts_at"].as_str().unwrap().to_owned(),
-            end: value["event_ends_at"].as_str().unwrap().to_owned(),
-        }
-    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -93,7 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .unwrap()
                         == cli.name
                 })
-                .map(Event::from),
+                .map(|v| serde_json::from_value(v.clone()).unwrap()),
         );
 
         // Break out if we are currently starting in a week that is past the
