@@ -11,3 +11,4 @@ This includes the following tasks:
 ## Ideas
 
 - Use [WeasyPrint](https://doc.courtbouillon.org/weasyprint/stable/) instead of LaTeX to create PDF invoices
+- Use [Typst](https://github.com/typst/typst) typesetting system instead of LaTeX
