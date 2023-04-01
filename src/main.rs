@@ -5,15 +5,19 @@ use clap::Parser;
 use creatief_vakvrouw::anita;
 use creatief_vakvrouw::cli;
 use creatief_vakvrouw::event;
+use creatief_vakvrouw::server;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let arg = cli::Cli::parse();
 
     match arg.command {
         cli::Commands::Anita { month, name} => {
             get_anita(month, name)
         },
-        cli::Commands::Server {} => Ok(()),
+        cli::Commands::Server {} => {
+            server::run().await
+        },
     }
 }
 
