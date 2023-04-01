@@ -1,70 +1,25 @@
+use anyhow::Result;
 use chrono::DateTime;
 use clap::Parser;
-use reqwest::Url;
 
-mod cli;
-mod event;
+use creatief_vakvrouw::anita;
+use creatief_vakvrouw::cli;
+use creatief_vakvrouw::event;
 
-use event::Event;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<()> {
     let arg = cli::Cli::parse();
 
     let (year, month) = arg.month.split_once('-').unwrap();
-    let mut week = month.parse::<u32>().unwrap() * 4 - 4;
 
-    let mut events: Vec<Event> = vec![];
-
-    loop {
-        let url = format!(
-            "https://denieuweanita.l1nda.nl/week/{}/{}?xhr=true",
-            year, week
-        )
-        .parse::<Url>()
-        .unwrap();
-        let cookie =
-            "csrftoken=wXue6RgLvFb39U4rfMLuVEEpw16WOiR1;sessionid=ugb1pibp3zfvj6lplz0pvnjn55p41ixp";
-
-        let client = reqwest::blocking::Client::new();
-        let res = client.get(url).header("Cookie", cookie).send()?;
-
-        let body = res.text()?;
-        let v: event::Week = serde_json::from_str(&body)?;
-
-        println!("Got data from {} to {}", v.start_date, v.end_date);
-
-        events.extend(v.schedule.iter()
-            .flat_map(|r| r.days.clone())
-            .filter(|d| d.date.starts_with(&arg.month))
-            .flat_map(|d| d.events)
-            .filter(|e| e.person == arg.name)
-        );
-
-        // Break out if we are currently starting in a week that is past the
-        // month we were processing.
-        let start_month = v.start_date
-            .split('-')
-            .take(2)
-            .last()
-            .unwrap();
-        let end_month = v.end_date
-            .split('-')
-            .take(2)
-            .last()
-            .unwrap();
-        if start_month > month || end_month > month {
-            break;
-        }
-
-        week += 1;
-    }
+    let rooster_noemi = anita::Anita::new(arg.name);
+    let events = rooster_noemi.get_events_from_month(month.to_owned(), year.to_owned())?;
 
     for e in &events {
         println!("{} works at {} from {}", e.person, e.date, e.start_to_end);
     }
 
     if events.is_empty() {
-        return Err("No relevant events".into());
+        return Err(anyhow::anyhow!("No relevant events"));
     }
 
     println!();
@@ -73,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn invoice(events: &[Event]) {
+fn invoice(events: &[event::Event]) {
     println!(
         "Factuur De Nieuwe Anita ({} t/m {})",
         events[0].date,
