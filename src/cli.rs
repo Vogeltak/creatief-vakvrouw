@@ -1,10 +1,19 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 pub struct Cli {
-    #[arg(short, long)]
-    pub month: String,
-    #[arg(short, long, default_value = "Noemi")]
-    pub name: String,
+    #[clap(subcommand)]
+    pub command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    Anita {
+        #[arg(short, long)]
+        month: String,
+        #[arg(short, long, default_value = "Noemi")]
+        name: String,
+    },
+    Server,
 }

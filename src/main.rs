@@ -9,9 +9,18 @@ use creatief_vakvrouw::event;
 fn main() -> Result<()> {
     let arg = cli::Cli::parse();
 
-    let (year, month) = arg.month.split_once('-').unwrap();
+    match arg.command {
+        cli::Commands::Anita { month, name} => {
+            get_anita(month, name)
+        },
+        cli::Commands::Server {} => Ok(()),
+    }
+}
 
-    let rooster_noemi = anita::Anita::new(arg.name);
+fn get_anita(month: String, name: String) -> Result<()> {
+    let (year, month) = month.split_once('-').unwrap();
+
+    let rooster_noemi = anita::Anita::new(name);
     let events = rooster_noemi.get_events_from_month(month.to_owned(), year.to_owned())?;
 
     for e in &events {
