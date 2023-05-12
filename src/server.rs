@@ -2,7 +2,13 @@ use crate::factuur::{Factuur, FactuurForm};
 
 use anyhow::Result;
 use askama::Template;
-use axum::{http::{header, StatusCode}, response::IntoResponse, routing::{get, post}, Router, Server, body::StreamBody};
+use axum::{
+    body::StreamBody,
+    http::{header, StatusCode},
+    response::IntoResponse,
+    routing::{get, post},
+    Router, Server,
+};
 use axum_extra::extract::Form;
 use tokio_util::io::ReaderStream;
 
@@ -51,11 +57,20 @@ async fn factuur_get() -> FactuurTemplate {
 async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoResponse {
     // TODO: Generate invoice
     let factuur = Factuur::from(factuur_form);
-    println!("[Factuur {}] Number of work items: {}", factuur.nummer, factuur.work_items.len());
+    println!(
+        "[Factuur {}] Number of work items: {}",
+        factuur.nummer,
+        factuur.work_items.len()
+    );
 
     let file = match tokio::fs::File::open("/tmp/test.pdf").await {
         Ok(file) => file,
-        Err(err) => return Err((StatusCode::NOT_FOUND, format!("Failed to generate invoice: {}", err))),
+        Err(err) => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                format!("Failed to generate invoice: {}", err),
+            ))
+        }
     };
 
     // Convert the `AsyncRead` into a `Stream`
@@ -68,7 +83,7 @@ async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoRespons
         (
             header::CONTENT_DISPOSITION,
             "attachment; filename=\"test.pdf\"",
-        )
+        ),
     ];
 
     Ok((headers, body))
