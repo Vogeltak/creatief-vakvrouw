@@ -12,20 +12,18 @@ async fn main() -> Result<()> {
     let arg = cli::Cli::parse();
 
     match arg.command {
-        cli::Commands::Anita { month, name} => {
-            get_anita(month, name)
-        },
-        cli::Commands::Server {} => {
-            server::run().await
-        },
+        cli::Commands::Anita { month, name } => get_anita(month, name).await,
+        cli::Commands::Server {} => server::run().await,
     }
 }
 
-fn get_anita(month: String, name: String) -> Result<()> {
+async fn get_anita(month: String, name: String) -> Result<()> {
     let (year, month) = month.split_once('-').unwrap();
 
     let rooster_noemi = anita::Anita::new(name);
-    let events = rooster_noemi.get_events_from_month(month.to_owned(), year.to_owned())?;
+    let events = rooster_noemi
+        .get_events_from_month(month.to_owned(), year.to_owned())
+        .await?;
 
     for e in &events {
         println!("{} works at {} from {}", e.person, e.date, e.start_to_end);
