@@ -6,8 +6,8 @@
     <h2>Nieuwe factuur</h2>
 </header>
 <form class="portal" action="/factuur" method="post">
-    <label for="factuurnummer">Factuurnummer:</label>
-    <input id="factuurnummer" type="number" name="factuurnummer" required>
+    <label for="factuur_nummer">Factuurnummer:</label>
+    <input id="factuur_nummer" type="number" name="factuur_nummer" required>
     <h3>Klant</h3>
     <label for="client_name">Naam:</label>
     <input id="client_name" name="client_name" type="text" required>
@@ -18,8 +18,8 @@
 
     <h3>Werkzaamheden</h3>
     <div class="flex-row">
-        <input id="taak_1" name="taak_1" type="text" placeholder="Omschrijving" required>
-        <input id="prijs_1" name="prijs_1" type="number" placeholder="Euro" required>
+        <input name="task" type="text" placeholder="Omschrijving" required>
+        <input name="price" type="number" placeholder="Euro" required>
     </div>
 
     <button id="add-taak" type="button" class="button"><strong>+ taak</strong></button>
@@ -36,14 +36,7 @@
         let new_task = last_task.cloneNode(true);
         let desc = new_task.firstElementChild;
         let price = new_task.lastElementChild;
-        // Strip the first 5 characters from the description's id, which is of
-        // the form "taak_999"
-        let previous_id_nr = parseInt(desc.getAttribute("id").substring(5));
-        desc.setAttribute("id", "taak_" + (previous_id_nr + 1).toString());
-        desc.setAttribute("name", "taak_" + (previous_id_nr + 1).toString());
         desc.value = "";
-        price.setAttribute("id", "prijs_" + (previous_id_nr + 1).toString());
-        price.setAttribute("name", "prijs_" + (previous_id_nr + 1).toString());
         price.value = "";
     
         last_task.after(new_task);

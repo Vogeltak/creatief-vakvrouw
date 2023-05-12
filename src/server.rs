@@ -1,8 +1,9 @@
-use crate::factuur::FactuurForm;
+use crate::factuur::{Factuur, FactuurForm};
 
 use anyhow::Result;
 use askama::Template;
-use axum::{Form, http::{header, StatusCode}, response::IntoResponse, routing::{get, post}, Router, Server, body::StreamBody};
+use axum::{http::{header, StatusCode}, response::IntoResponse, routing::{get, post}, Router, Server, body::StreamBody};
+use axum_extra::extract::Form;
 use tokio_util::io::ReaderStream;
 
 #[derive(Template)]
@@ -47,8 +48,10 @@ async fn factuur_get() -> FactuurTemplate {
     FactuurTemplate {}
 }
 
-async fn factuur_post() -> impl IntoResponse {
+async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoResponse {
     // TODO: Generate invoice
+    let factuur = Factuur::from(factuur_form);
+    println!("[Factuur {}] Number of work items: {}", factuur.nummer, factuur.work_items.len());
 
     let file = match tokio::fs::File::open("/tmp/test.pdf").await {
         Ok(file) => file,
