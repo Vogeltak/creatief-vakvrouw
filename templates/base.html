@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<head>
+    <title>{% block title %}Creatief Vakvrouw{% endblock %}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+        :root {
+            --main-color: #222;
+            --secondary-color: #888;
+            --main-bg-color: white;
+            --secondary-bg-color: #f5f5f5;
+            --tertiary-bg-color: #f0f0f0;
+            --shadow-color: #ddd;
+        }
+        body {
+            background-color: var(--main-bg-color);
+            color: var(--main-color);
+            font-family: "Source Serif Pro", "Georgia", serif;
+            margin: 0;
+        }
+        main {
+            max-width: 700px;
+            margin: auto;
+            padding: 45px 15px;
+        }
+        header {
+            margin-bottom: 64px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        input {
+            border: 1px solid var(--main-color);
+            color: var(--main-color);
+            display: block;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 4px 8px;
+        }
+        input:focus-visible {
+            box-shadow: 4px 4px var(--shadow-color);
+            outline: none;
+            
+        }
+        .button {
+            border: 1px solid var(--main-color);
+            box-shadow: 4px 4px var(--shadow-color);
+            background-color: var(--main-bg-color);
+            color: var(--main-color);
+            cursor: pointer;
+            display: block;
+            padding: 4px 8px;
+            text-decoration: none;
+        }
+        .button:hover:not(.disabled) {
+            background-color: var(--secondary-bg-color);
+        }
+        .button:active:not(.disabled) {
+            background-color: var(--tertiary-bg-color);
+        }
+        .button.disabled {
+            border-color: var(--secondary-color);
+            box-shadow: 2px 2px var(--shadow-color);
+            color: var(--secondary-color);
+        }
+        .portal {
+            display: flex;
+            flex-direction: column;
+            row-gap: 16px;
+        }
+        .flex-row {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            column-gap: 12px;
+            row-gap: 8px;
+        }
+        .flex-row *:first-child{
+            flex-grow: 3;
+        }
+        .flex-row *:last-child {
+            flex-shrink: 1;
+        }
+        #add-taak {
+            margin: auto;
+            width: 30%;;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro&display=swap" rel="stylesheet">
+</head>
+<body>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    {% block javascript %}{% endblock %}
+</body>

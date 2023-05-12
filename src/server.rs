@@ -1,10 +1,30 @@
+use crate::factuur::FactuurForm;
+
 use anyhow::Result;
-use axum::{response::Html, routing::get, Router, Server};
+use askama::Template;
+use axum::{Form, http::{header, StatusCode}, response::IntoResponse, routing::{get, post}, Router, Server, body::StreamBody};
+use tokio_util::io::ReaderStream;
+
+#[derive(Template)]
+#[template(path = "index.html")]
+struct PortaalTemplate {}
+
+#[derive(Template)]
+#[template(path = "anita.html")]
+struct AnitaTemplate<'a> {
+    name: &'a str,
+}
+
+#[derive(Template)]
+#[template(path = "factuur.html")]
+struct FactuurTemplate {}
 
 pub async fn run() -> Result<()> {
     let router = Router::new()
         .route("/", get(root_get))
-        .route("/anita", get(anita_get));
+        .route("/anita", get(anita_get))
+        .route("/factuur", get(factuur_get))
+        .route("/factuur", post(factuur_post));
 
     let server = Server::bind(&"0.0.0.0:1728".parse()?).serve(router.into_make_service());
     let addr = server.local_addr();
@@ -15,10 +35,38 @@ pub async fn run() -> Result<()> {
     Ok(())
 }
 
-pub async fn root_get() -> Html<&'static str> {
-    Html(include_str!("../templates/index.html"))
+async fn root_get() -> PortaalTemplate {
+    PortaalTemplate {}
 }
 
-pub async fn anita_get() -> Html<&'static str> {
-    Html(include_str!("../templates/anita.html"))
+async fn anita_get() -> AnitaTemplate<'static> {
+    AnitaTemplate { name: "Noemi" }
+}
+
+async fn factuur_get() -> FactuurTemplate {
+    FactuurTemplate {}
+}
+
+async fn factuur_post() -> impl IntoResponse {
+    // TODO: Generate invoice
+
+    let file = match tokio::fs::File::open("/tmp/test.pdf").await {
+        Ok(file) => file,
+        Err(err) => return Err((StatusCode::NOT_FOUND, format!("Failed to generate invoice: {}", err))),
+    };
+
+    // Convert the `AsyncRead` into a `Stream`
+    let stream = ReaderStream::new(file);
+    // Convert the `Stream` into an `axum::body::HttpBody`
+    let body = StreamBody::new(stream);
+
+    let headers = [
+        (header::CONTENT_TYPE, "application/pdf"),
+        (
+            header::CONTENT_DISPOSITION,
+            "attachment; filename=\"test.pdf\"",
+        )
+    ];
+
+    Ok((headers, body))
 }
