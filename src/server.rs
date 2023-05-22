@@ -18,9 +18,7 @@ struct PortaalTemplate {}
 
 #[derive(Template)]
 #[template(path = "anita.html")]
-struct AnitaTemplate<'a> {
-    name: &'a str,
-}
+struct AnitaTemplate {}
 
 #[derive(Template)]
 #[template(path = "factuur.html")]
@@ -46,8 +44,8 @@ async fn root_get() -> PortaalTemplate {
     PortaalTemplate {}
 }
 
-async fn anita_get() -> AnitaTemplate<'static> {
-    AnitaTemplate { name: "Noemi" }
+async fn anita_get() -> AnitaTemplate {
+    AnitaTemplate {}
 }
 
 async fn factuur_get() -> FactuurTemplate {
@@ -55,13 +53,9 @@ async fn factuur_get() -> FactuurTemplate {
 }
 
 async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoResponse {
-    // TODO: Generate invoice
     let factuur = Factuur::from(factuur_form);
-    println!(
-        "[Factuur {}] Number of work items: {}",
-        factuur.nummer,
-        factuur.work_items.len()
-    );
+
+    // TODO: Generate invoice
 
     let file = match tokio::fs::File::open("/tmp/test.pdf").await {
         Ok(file) => file,
