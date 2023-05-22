@@ -11,9 +11,20 @@
         Controleer of de tijden kloppen, en voeg waar nodig shifts toe.
     </p>
 </header>
-<form class="portal" action="/anita" method="post">
+<form id="anita-form" class="portal" action="/anita" method="post">
     <label for="maand">Maand:</label>
     <input id="maand" name="maand" type="month">
     <input type="submit" class="button" value="Haal data op">
 </form>
+{% endblock %}
+{% block javascript %}
+<script type="text/javascript">
+    let f = document.getElementById("anita-form");
+    f.onsubmit= function() {
+        let last = f.lastElementChild;
+        let msg = document.createElement("p");
+        msg.textContent = "Momentje, even de gegevens uit de planner van De Nieuwe Anita halen..."
+        last.after(msg);
+    }
+</script>
 {% endblock %}
