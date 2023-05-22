@@ -8,6 +8,22 @@ This includes the following tasks:
 - Keep track of balance sheet
 - Keep track of income and costs
 
+## Getting started
+
+1. Check-out source code
+2. Dump `clients.json` in the root, e.g.:
+```json
+  {
+    "client-key": {
+      "name": "Client A",
+      "address": "Main Road 12",
+      "zip": "1234AB, Amsterdam"
+    }
+  }
+```
+3. Set `LINDA_AUTH` environment variable to a valid session key
+4. Run development server with `cargo run -- server`
+
 ## Ideas
 
 - Use [WeasyPrint](https://doc.courtbouillon.org/weasyprint/stable/) instead of LaTeX to create PDF invoices

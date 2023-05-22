@@ -1,3 +1,6 @@
+use crate::event;
+
+use chrono::DateTime;
 use serde::{Deserialize, Serialize};
 
 use std::error::Error;
@@ -52,6 +55,19 @@ pub struct Client {
 pub struct WorkItem {
     pub desc: String,
     pub euro: f32,
+}
+
+impl From<event::Event> for WorkItem {
+    fn from(e: event::Event) -> Self {
+        let desc = format!("{} {} ({})", e.event_type, e.date, e.start_to_end);
+        let start = DateTime::parse_from_rfc3339(&format!("{}+01:00", e.start)).unwrap();
+        let end = DateTime::parse_from_rfc3339(&format!("{}+01:00", e.end)).unwrap();
+        let hours = (end - start).num_minutes() as f32 / 60.0;
+        let tarief = 18.0;
+        let total = hours * tarief;
+
+        Self { desc, euro: total }
+    }
 }
 
 impl Factuur {

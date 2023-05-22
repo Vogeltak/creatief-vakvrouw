@@ -1,5 +1,6 @@
 use anyhow::Result;
 use reqwest::Url;
+use serde::Deserialize;
 
 use std::env;
 
@@ -60,5 +61,29 @@ impl Anita {
         }
 
         Ok(events)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct AnitaForm {
+    pub maand: Month,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Month(pub String);
+
+impl TryFrom<String> for Month {
+    type Error = anyhow::Error;
+
+    /// Should be of form YYYY-MM
+    fn try_from(s: String) -> Result<Self> {
+        match s.split_once('-') {
+            Some(_) => {
+                // TODO: Verify that year and month are within the allowed
+                // numerical range.
+                Ok(Self(s))
+            }
+            None => anyhow::bail!("invalid month notation: should be of form YYYY-MM"),
+        }
     }
 }

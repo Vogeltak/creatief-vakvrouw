@@ -9,20 +9,43 @@
     <label for="factuur_nummer">Factuurnummer:</label>
     <input id="factuur_nummer" type="number" name="factuur_nummer" required>
     <h3>Klant</h3>
-    <label for="client_name">Naam:</label>
-    <input id="client_name" name="client_name" type="text" required>
-    <label for="client_address">Adres:</label>
-    <input id="client_address" name="client_address" type="text" required>
-    <label for="client_zip">Postcode en stad:</label>
-    <input id="client_zip" name="client_zip" type="text" required>
+    {% match client %}
+      {% when Some with (client) %}
+        <label for="client_name">Naam:</label>
+        <input id="client_name" name="client_name" type="text" required value="{{ client.name }}">
+        <label for="client_address">Adres:</label>
+        <input id="client_address" name="client_address" type="text" required value="{{ client.address  }}">
+        <label for="client_zip">Postcode en stad:</label>
+        <input id="client_zip" name="client_zip" type="text" required value="{{ client.zip}}">
+      {% when None %}
+        <label for="client_name">Naam:</label>
+        <input id="client_name" name="client_name" type="text" required>
+        <label for="client_address">Adres:</label>
+        <input id="client_address" name="client_address" type="text" required>
+        <label for="client_zip">Postcode en stad:</label>
+        <input id="client_zip" name="client_zip" type="text" required>
+    {% endmatch %}
 
     <h3>Werkzaamheden</h3>
+    {% for item in items %}
+    <div class="flex-row">
+        <input name="task" type="text" placeholder="Omschrijving" required value="{{ item.desc }}">
+        <input name="price" type="number" placeholder="Euro" required value="{{ item.euro }}">
+    </div>
+    {% else %}
     <div class="flex-row">
         <input name="task" type="text" placeholder="Omschrijving" required>
         <input name="price" type="number" placeholder="Euro" required>
     </div>
+    {% endfor %}
 
     <button id="add-taak" type="button" class="button"><strong>+ taak</strong></button>
+
+    <p>
+        Als alles ingevuld is, genereren we automatisch een PDF voor je factuur.
+        Deze slaat je apparaat direct lokaal op.
+        Upload deze vervolgens naar je Google Drive en stuur naar de andere partij.
+    </p>
 
     <input type="submit" class="button" value="Maak factuur">
 </form>

@@ -1,9 +1,11 @@
-use crate::factuur::{Factuur, FactuurForm};
+use crate::anita::{Anita, AnitaForm};
+use crate::factuur::{self, Factuur, FactuurForm};
 
 use anyhow::Result;
 use askama::Template;
 use axum::{
     body::StreamBody,
+    extract::State,
     http::{header, StatusCode},
     response::IntoResponse,
     routing::{get, post},
@@ -11,6 +13,8 @@ use axum::{
 };
 use axum_extra::extract::Form;
 use tokio_util::io::ReaderStream;
+
+use std::collections::HashMap;
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -22,14 +26,30 @@ struct AnitaTemplate {}
 
 #[derive(Template)]
 #[template(path = "factuur.html")]
-struct FactuurTemplate {}
+struct FactuurTemplate {
+    client: Option<factuur::Client>,
+    items: Vec<factuur::WorkItem>,
+}
+
+#[derive(Debug, Clone)]
+struct AppState {
+    clients: HashMap<String, factuur::Client>,
+}
 
 pub async fn run() -> Result<()> {
+    let clients = match serde_json::from_str(include_str!("../clients.json")) {
+        Ok(c) => c,
+        Err(_) => anyhow::bail!("invalidly formatted clients.json"),
+    };
+    let state = AppState { clients };
+
     let router = Router::new()
         .route("/", get(root_get))
         .route("/anita", get(anita_get))
+        .route("/anita", post(anita_post))
         .route("/factuur", get(factuur_get))
-        .route("/factuur", post(factuur_post));
+        .route("/factuur", post(factuur_post))
+        .with_state(state);
 
     let server = Server::bind(&"0.0.0.0:1728".parse()?).serve(router.into_make_service());
     let addr = server.local_addr();
@@ -48,8 +68,37 @@ async fn anita_get() -> AnitaTemplate {
     AnitaTemplate {}
 }
 
+async fn anita_post(
+    State(state): State<AppState>,
+    Form(anita_form): Form<AnitaForm>,
+) -> FactuurTemplate {
+    let (year, month) = anita_form.maand.0.split_once('-').unwrap();
+    let items = match Anita::new("Noemi".to_string())
+        .get_events_from_month(month.to_owned(), year.to_owned())
+        .await
+    {
+        Ok(events) => events
+            .iter()
+            .cloned()
+            .map(factuur::WorkItem::from)
+            .collect::<Vec<factuur::WorkItem>>(),
+        Err(err) => {
+            println!("Failed to fetch data from L1NDA: {}", err);
+            vec![]
+        }
+    };
+
+    FactuurTemplate {
+        client: state.clients.get("anita").cloned(),
+        items: items,
+    }
+}
+
 async fn factuur_get() -> FactuurTemplate {
-    FactuurTemplate {}
+    FactuurTemplate {
+        client: None,
+        items: vec![],
+    }
 }
 
 async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoResponse {
