@@ -90,7 +90,7 @@ async fn anita_post(
 
     FactuurTemplate {
         client: state.clients.get("anita").cloned(),
-        items: items,
+        items,
     }
 }
 
@@ -138,10 +138,10 @@ async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoRespons
     let body = StreamBody::new(stream);
 
     let headers = [
-        (header::CONTENT_TYPE, "application/pdf"),
+        (header::CONTENT_TYPE, "application/pdf".to_owned()),
         (
             header::CONTENT_DISPOSITION,
-            "attachment; filename=\"test.pdf\"",
+            format!("attachment; filename=\"Factuur {} {}.pdf\"", factuur.client.name, factuur.nummer),
         ),
     ];
 

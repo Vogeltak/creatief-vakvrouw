@@ -21,7 +21,7 @@ pub struct FactuurForm {
     #[serde(rename = "task")]
     pub tasks: Vec<String>,
     #[serde(rename = "price")]
-    pub prices: Vec<f32>,
+    pub prices: Vec<String>,
 }
 
 #[derive(Template)]
@@ -47,6 +47,13 @@ impl From<FactuurForm> for Factuur {
                 zip: value.client_zip,
             },
             work_items: zip(value.tasks, value.prices)
+                .filter(|(desc, euro)| !desc.is_empty() && !euro.is_empty())
+                .filter_map(|(desc, euro)| {
+                    match euro.parse::<f32>() {
+                        Err(_) => None,
+                        Ok(euro) => Some((desc, euro))
+                    }
+                })
                 .map(|(desc, euro)| WorkItem { desc, euro })
                 .collect(),
         }
@@ -111,7 +118,8 @@ impl Factuur {
         ));
         let output = Command::new("pandoc")
             .arg(details_file.path())
-            .arg(format!("-o {}", output_path.to_string_lossy()))
+            .arg("-o")
+            .arg(format!("{}", output_path.to_string_lossy()))
             .arg(format!("--template={}", tex_file.path().to_string_lossy()))
             .arg("--pdf-engine=xelatex")
             .output()

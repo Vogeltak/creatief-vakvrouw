@@ -29,13 +29,13 @@
     <h3>Werkzaamheden</h3>
     {% for item in items %}
     <div class="flex-row">
-        <input name="task" type="text" placeholder="Omschrijving" required value="{{ item.desc }}">
-        <input name="price" type="number" placeholder="Euro" required value="{{ item.euro }}">
+        <input name="task" type="text" placeholder="Omschrijving" value="{{ item.desc }}">
+        <input name="price" type="number" placeholder="Euro" value="{{ item.euro }}">
     </div>
     {% else %}
     <div class="flex-row">
-        <input name="task" type="text" placeholder="Omschrijving" required>
-        <input name="price" type="number" placeholder="Euro" required>
+        <input name="task" type="text" placeholder="Omschrijving">
+        <input name="price" type="number" placeholder="Euro">
     </div>
     {% endfor %}
 
