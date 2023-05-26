@@ -1,5 +1,5 @@
 ---
-invoice-nr: 2305
+invoice-nr: {{ factuur.nummer }}
 author: Creatief Vakvrouw
 name: Noemi van der Wurf
 city: Amsterdam
@@ -8,21 +8,15 @@ from:
 - BTW NL004011638B89
 - KVK 84767383
 to:
-- V.O.F. De Nieuwe Anita
-- Frederik Hendrikstraat 111A
-- 1052HN Amsterdam
+- {{ factuur.client.name }}
+- {{ factuur.client.address }}
+- {{ factuur.client.zip }}
 VAT: 21
 service:
-- description: Bar 2023-02-02 (17:00-01:00)
-  price: 144
-- description: Bar 2023-02-03 (18:30-01:00)
-  price: 117
-- description: Deur 2023-02-11 (20:00-01:00)
-  price: 90
-- description: Bar 2023-02-18 (17:00-02:00)
-  price: 162
-- description: Bar 2023-02-24 (20:00-02:00)
-  price: 108
+{% for item in factuur.work_items %}
+- description: {{ item.desc }}
+  price: {{ item.euro }}
+{% endfor %}
 
 closingnote: |
   Gelieve het verschuldigde bedrag binnen 14 dagen over te maken naar:

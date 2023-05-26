@@ -104,14 +104,30 @@ async fn factuur_get() -> FactuurTemplate {
 async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoResponse {
     let factuur = Factuur::from(factuur_form);
 
-    // TODO: Generate invoice
+    let factuur_file = match factuur.generate_pdf() {
+        Ok(f) => f,
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!(
+                    "Hey er ging iets mis tijdens het genereren van de PDF. \
+                    Laat dit even zien aan Max:\n\n {}",
+                    err
+                ),
+            ))
+        }
+    };
 
-    let file = match tokio::fs::File::open("/tmp/test.pdf").await {
+    let file = match tokio::fs::File::open(&factuur_file).await {
         Ok(file) => file,
         Err(err) => {
             return Err((
                 StatusCode::NOT_FOUND,
-                format!("Failed to generate invoice: {}", err),
+                format!(
+                    "Hey er ging iets mis tijdens het genereren van de PDF. \
+                    Laat dit even zien aan Max:\n\n {}",
+                    err
+                ),
             ))
         }
     };

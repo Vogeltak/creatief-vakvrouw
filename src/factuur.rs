@@ -1,13 +1,16 @@
 use crate::event;
 
+use askama::Template;
 use chrono::DateTime;
 use serde::{Deserialize, Serialize};
+use tempfile::NamedTempFile;
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::io;
+use std::io::{self, Write};
 use std::iter::zip;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct FactuurForm {
@@ -19,6 +22,12 @@ pub struct FactuurForm {
     pub tasks: Vec<String>,
     #[serde(rename = "price")]
     pub prices: Vec<f32>,
+}
+
+#[derive(Template)]
+#[template(path = "invoice/details.yml")]
+pub struct FactuurTemplate<'a> {
+    pub factuur: &'a Factuur,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -70,9 +79,55 @@ impl From<event::Event> for WorkItem {
     }
 }
 
+const TEX_TEMPLATE: &[u8] = include_bytes!("../templates/invoice/template.tex");
+
 impl Factuur {
-    pub fn generate_pdf() -> Result<FactuurFile, FactuurError> {
-        Ok(FactuurFile(PathBuf::new()))
+    pub fn generate_pdf(&self) -> Result<FactuurFile, FactuurError> {
+        // Generate details from YAML template
+        let factuur_details = FactuurTemplate { factuur: self }.render().unwrap();
+        let mut details_file = NamedTempFile::new().map_err(|err| FactuurError {
+            kind: FactuurErrorKind::ReadFile(err),
+        })?;
+        details_file
+            .write_all(factuur_details.as_bytes())
+            .map_err(|err| FactuurError {
+                kind: FactuurErrorKind::ReadFile(err),
+            })?;
+
+        // Write the latex template to a temporary file so we can use it in our command
+        let mut tex_file = NamedTempFile::new().map_err(|err| FactuurError {
+            kind: FactuurErrorKind::ReadFile(err),
+        })?;
+        tex_file
+            .write_all(TEX_TEMPLATE)
+            .map_err(|err| FactuurError {
+                kind: FactuurErrorKind::ReadFile(err),
+            })?;
+
+        // Call pandoc with details.yml and template.tex and save to /tmp
+        let output_path = PathBuf::from(format!(
+            "/tmp/Factuur {} {}.pdf",
+            self.client.name, self.nummer
+        ));
+        let output = Command::new("pandoc")
+            .arg(details_file.path())
+            .arg(format!("-o {}", output_path.to_string_lossy()))
+            .arg(format!("--template={}", tex_file.path().to_string_lossy()))
+            .arg("--pdf-engine=xelatex")
+            .output()
+            .map_err(|err| FactuurError {
+                kind: FactuurErrorKind::PandocCommand(err),
+            })?;
+
+        match output.status.success() {
+            true => Ok(FactuurFile(output_path)),
+            false => Err(FactuurError {
+                kind: FactuurErrorKind::PandocCommand(io::Error::new(
+                    io::ErrorKind::Other,
+                    String::from_utf8_lossy(&output.stderr).to_string(),
+                )),
+            }),
+        }
     }
 }
 
@@ -83,7 +138,7 @@ pub struct FactuurError {
 
 impl Display for FactuurError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "error creating factuur")
+        write!(f, "error creating factuur: {:?}", self.kind)
     }
 }
 
@@ -108,8 +163,15 @@ pub enum FactuurErrorKind {
 /// deleted from disk on Drop to prevent disk space from filling up.
 pub struct FactuurFile(PathBuf);
 
+impl AsRef<Path> for FactuurFile {
+    #[inline]
+    fn as_ref(&self) -> &Path {
+        &self.0
+    }
+}
+
 impl Drop for FactuurFile {
     fn drop(&mut self) {
-        std::fs::remove_file(&self.0);
+        _ = std::fs::remove_file(&self.0);
     }
 }
