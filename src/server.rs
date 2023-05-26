@@ -80,7 +80,7 @@ async fn anita_post(
         Ok(events) => events
             .iter()
             .cloned()
-            .map(factuur::WorkItem::from)
+            .filter_map(|e| factuur::WorkItem::try_from(e).ok())
             .collect::<Vec<factuur::WorkItem>>(),
         Err(err) => {
             println!("Failed to fetch data from L1NDA: {}", err);
