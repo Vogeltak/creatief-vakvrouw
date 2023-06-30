@@ -9,8 +9,16 @@
     </p>
 </header>
 <section class="portal">
-    <a href="/anita" class="button">Nieuwe factuur (Nieuwe Anita)</a>
-    <a href="/factuur" class="button">Nieuwe factuur</a>
+    <h3>Nieuwe factuur</h3>
+    <a href="/anita" class="button">Nieuwe Anita</a>
+    {% for (key, client) in clients %}
+    {% if key != "anita" %}
+    <a href="/factuur?client={{key}}" class="button">{{client.name}}</a>
+    {% endif %}
+    {% endfor %}
+    <a href="/factuur" class="button">Algemeen</a>
+
+    <h3>Overige zaken</h3>
     <a href="#" class="button disabled">BTW aangifte</a>
 </section>
 {% endblock %}

@@ -3,6 +3,7 @@ use crate::factuur::{self, Factuur, FactuurForm};
 
 use anyhow::Result;
 use askama::Template;
+use axum::extract::Query;
 use axum::{
     body::StreamBody,
     extract::State,
@@ -12,13 +13,18 @@ use axum::{
     Router, Server,
 };
 use axum_extra::extract::Form;
+use serde::{Deserialize, Deserializer};
 use tokio_util::io::ReaderStream;
 
 use std::collections::HashMap;
+use std::fmt::Display;
+use std::str::FromStr;
 
 #[derive(Template)]
 #[template(path = "index.html")]
-struct PortaalTemplate {}
+struct PortaalTemplate {
+    clients: HashMap<String, factuur::Client>,
+}
 
 #[derive(Template)]
 #[template(path = "anita.html")]
@@ -60,8 +66,10 @@ pub async fn run() -> Result<()> {
     Ok(())
 }
 
-async fn root_get() -> PortaalTemplate {
-    PortaalTemplate {}
+async fn root_get(State(state): State<AppState>) -> PortaalTemplate {
+    PortaalTemplate {
+        clients: state.clients,
+    }
 }
 
 async fn anita_get() -> AnitaTemplate {
@@ -94,10 +102,39 @@ async fn anita_post(
     }
 }
 
-async fn factuur_get() -> FactuurTemplate {
+async fn factuur_get(
+    State(state): State<AppState>,
+    Query(params): Query<FactuurParams>,
+) -> FactuurTemplate {
+    let client = match params.client {
+        None => None,
+        Some(key) => state.clients.get(&key).cloned(),
+    };
+
     FactuurTemplate {
-        client: None,
+        client,
         items: vec![],
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct FactuurParams {
+    #[serde(default, deserialize_with = "empty_string_as_none")]
+    client: Option<String>,
+}
+
+fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: FromStr,
+    T::Err: Display,
+{
+    let opt = Option::<String>::deserialize(de)?;
+    match opt.as_deref() {
+        None | Some("") => Ok(None),
+        Some(s) => FromStr::from_str(s)
+            .map_err(serde::de::Error::custom)
+            .map(Some),
     }
 }
 
