@@ -48,11 +48,9 @@ impl From<FactuurForm> for Factuur {
             },
             work_items: zip(value.tasks, value.prices)
                 .filter(|(desc, euro)| !desc.is_empty() && !euro.is_empty())
-                .filter_map(|(desc, euro)| {
-                    match euro.parse::<f32>() {
-                        Err(_) => None,
-                        Ok(euro) => Some((desc, euro))
-                    }
+                .filter_map(|(desc, euro)| match euro.parse::<f32>() {
+                    Err(_) => None,
+                    Ok(euro) => Some((desc, euro)),
                 })
                 .map(|(desc, euro)| WorkItem { desc, euro })
                 .collect(),
@@ -78,8 +76,16 @@ impl TryFrom<event::Event> for WorkItem {
 
     fn try_from(e: event::Event) -> Result<Self, FactuurError> {
         let desc = format!("{} {} ({})", e.event_type, e.date, e.start_to_end);
-        let start = DateTime::parse_from_rfc3339(&format!("{}+01:00", e.start)).map_err(|err| FactuurError { kind: FactuurErrorKind::ParseDate(err) })?;
-        let end = DateTime::parse_from_rfc3339(&format!("{}+01:00", e.end)).map_err(|err| FactuurError { kind: FactuurErrorKind::ParseDate(err) })?;
+        let start = DateTime::parse_from_rfc3339(&format!("{}+01:00", e.start)).map_err(|err| {
+            FactuurError {
+                kind: FactuurErrorKind::ParseDate(err),
+            }
+        })?;
+        let end = DateTime::parse_from_rfc3339(&format!("{}+01:00", e.end)).map_err(|err| {
+            FactuurError {
+                kind: FactuurErrorKind::ParseDate(err),
+            }
+        })?;
         let hours = (end - start).num_minutes() as f32 / 60.0;
         let tarief = 18.0;
         let total = hours * tarief;

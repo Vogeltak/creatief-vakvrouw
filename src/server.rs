@@ -178,7 +178,10 @@ async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoRespons
         (header::CONTENT_TYPE, "application/pdf".to_owned()),
         (
             header::CONTENT_DISPOSITION,
-            format!("attachment; filename=\"Factuur {} {}.pdf\"", factuur.client.name, factuur.nummer),
+            format!(
+                "attachment; filename=\"Factuur {} {}.pdf\"",
+                factuur.client.name, factuur.nummer
+            ),
         ),
     ];
 
