@@ -1,4 +1,5 @@
 use crate::anita::{Anita, AnitaForm};
+use crate::db::add_invoice_to_db;
 use crate::factuur::{self, Factuur, FactuurForm};
 
 use anyhow::Result;
@@ -14,6 +15,7 @@ use axum::{
 };
 use axum_extra::extract::Form;
 use serde::{Deserialize, Deserializer};
+use sqlx::sqlite::SqlitePool;
 use tokio_util::io::ReaderStream;
 
 use std::collections::HashMap;
@@ -40,6 +42,7 @@ struct FactuurTemplate {
 #[derive(Debug, Clone)]
 struct AppState {
     clients: HashMap<String, factuur::Client>,
+    db: SqlitePool,
 }
 
 pub async fn run() -> Result<()> {
@@ -47,7 +50,14 @@ pub async fn run() -> Result<()> {
         Ok(c) => c,
         Err(_) => anyhow::bail!("invalidly formatted clients.json"),
     };
-    let state = AppState { clients };
+
+    let db_pool = SqlitePool::connect("facturen.db").await?;
+    sqlx::migrate!().run(&db_pool).await?;
+
+    let state = AppState {
+        clients,
+        db: db_pool,
+    };
 
     let router = Router::new()
         .route("/", get(root_get))
@@ -138,8 +148,27 @@ where
     }
 }
 
-async fn factuur_post(Form(factuur_form): Form<FactuurForm>) -> impl IntoResponse {
+async fn factuur_post(
+    State(state): State<AppState>,
+    Form(factuur_form): Form<FactuurForm>,
+) -> impl IntoResponse {
     let factuur = Factuur::from(factuur_form);
+
+    // Persist invoice details to the database
+    let mut conn = state.db.acquire().await.unwrap();
+    match add_invoice_to_db(&mut conn, &factuur).await {
+        Ok(_) => (),
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!(
+                    "Hey, foutje tijdens het updaten van de database. \
+                    Laat dit even zien aan Max:\n\n {}",
+                    err
+                ),
+            ))
+        }
+    };
 
     let factuur_file = match factuur.generate_pdf() {
         Ok(f) => f,
