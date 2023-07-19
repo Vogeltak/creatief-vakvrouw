@@ -69,7 +69,7 @@ pub async fn run() -> Result<()> {
         Err(_) => anyhow::bail!("invalidly formatted clients.json"),
     };
 
-    let db_pool = SqlitePool::connect("facturen.db").await?;
+    let db_pool = SqlitePool::connect("/data/facturen.db?mode=rwc").await?;
     sqlx::migrate!().run(&db_pool).await?;
 
     let state = AppState {
@@ -83,7 +83,7 @@ pub async fn run() -> Result<()> {
         .route("/anita", post(anita_post))
         .route("/factuur", get(factuur_get))
         .route("/factuur", post(factuur_post))
-        .route("/history", get(history_get))
+        .route("/alle", get(history_get))
         .with_state(state);
 
     let server = Server::bind(&"0.0.0.0:1728".parse()?).serve(router.into_make_service());

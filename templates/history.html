@@ -9,7 +9,7 @@
 {% for (yearmonth, invoices) in grouped_invoices %}
 <section>
     <h3>{{ yearmonth }}</h3>
-{% for f in invoices %}
+    {% for f in invoices %}
     <details class="factuur-row">
         <summary>
             <span>
@@ -38,7 +38,7 @@
             Created at <span class="tag">{{ f.date|date }}</span>
         </div>
     </details>
-{% endfor %}
-{% endfor %}
+    {% endfor %}
 </section>
+{% endfor %}
 {% endblock %}

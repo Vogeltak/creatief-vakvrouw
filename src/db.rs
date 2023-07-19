@@ -27,8 +27,6 @@ SELECT id FROM client WHERE name = ?
     .fetch_one(&mut *conn)
     .await?;
 
-    println!("Client ID: {}", client.id);
-
     // Calculate some additional information to store alongside the mvp
     // invoice in the database.
     let nummer = factuur.nummer as i32;
