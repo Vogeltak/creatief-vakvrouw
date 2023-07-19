@@ -11,6 +11,8 @@
             --secondary-bg-color: #f5f5f5;
             --tertiary-bg-color: #f0f0f0;
             --shadow-color: #ddd;
+            --shadow-color-card: #666;
+            --tag-color: #e6e6e6;
         }
         body {
             background-color: var(--main-bg-color);
@@ -84,6 +86,51 @@
         }
         #add-taak {
             margin-bottom: 16px;
+        }
+        .factuur-row {
+            border: 1px solid var(--main-color);
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        .factuur-row[open] {
+            box-shadow: 4px 4px var(--shadow-color-card);
+        }
+        .factuur-row summary:hover {
+            background-color: var(--secondary-bg-color);
+        }
+        .factuur-row summary {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            padding: 12px;
+        }
+        .factuur-row .factuur-details {
+            padding: 0 12px 12px 12px;
+        }
+        .factuur-details table {
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+        .factuur-details tr {
+            border-top: 1px dashed var(--main-color);
+        }
+        .factuur-details tr:nth-child(even) {
+            background-color: var(--secondary-bg-color);
+        }
+        .factuur-details-total {
+            border-top: 1px solid var(--main-color) !important;
+            font-weight: bold;
+        }
+        .factuur-details td {
+            text-align: right;
+        }
+        .factuur-details td:nth-child(2) {
+            width: 25%;
+        }
+        .tag {
+            background-color: var(--tag-color);
+            padding: 2px 8px;
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">

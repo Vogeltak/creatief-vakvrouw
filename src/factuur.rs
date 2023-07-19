@@ -1,7 +1,7 @@
 use crate::event;
 
 use askama::Template;
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
 
@@ -11,6 +11,8 @@ use std::io::{self, Write};
 use std::iter::zip;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+const BTW_RATE: f64 = 0.21;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct FactuurForm {
@@ -35,10 +37,27 @@ pub struct Factuur {
     pub nummer: usize,
     pub client: Client,
     pub work_items: Vec<WorkItem>,
+    pub subtotal: f64,
+    pub btw: f64,
+    pub total: f64,
+    pub date: DateTime<Utc>,
 }
 
 impl From<FactuurForm> for Factuur {
     fn from(value: FactuurForm) -> Self {
+        let work_items: Vec<WorkItem> = zip(value.tasks, value.prices)
+            .filter(|(desc, euro)| !desc.is_empty() && !euro.is_empty())
+            .filter_map(|(desc, euro)| match euro.parse::<f64>() {
+                Err(_) => None,
+                Ok(euro) => Some((desc, euro)),
+            })
+            .map(|(desc, euro)| WorkItem { desc, euro })
+            .collect();
+
+        let subtotal = work_items.iter().map(|i| i.euro).sum::<f64>();
+        let btw = BTW_RATE * subtotal;
+        let total = subtotal + btw;
+
         Factuur {
             nummer: value.factuur_nummer,
             client: Client {
@@ -46,14 +65,11 @@ impl From<FactuurForm> for Factuur {
                 address: value.client_address,
                 zip: value.client_zip,
             },
-            work_items: zip(value.tasks, value.prices)
-                .filter(|(desc, euro)| !desc.is_empty() && !euro.is_empty())
-                .filter_map(|(desc, euro)| match euro.parse::<f32>() {
-                    Err(_) => None,
-                    Ok(euro) => Some((desc, euro)),
-                })
-                .map(|(desc, euro)| WorkItem { desc, euro })
-                .collect(),
+            work_items,
+            subtotal,
+            btw,
+            total,
+            date: chrono::offset::Utc::now(),
         }
     }
 }
@@ -68,7 +84,7 @@ pub struct Client {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct WorkItem {
     pub desc: String,
-    pub euro: f32,
+    pub euro: f64,
 }
 
 impl TryFrom<event::Event> for WorkItem {
@@ -86,7 +102,7 @@ impl TryFrom<event::Event> for WorkItem {
                 kind: FactuurErrorKind::ParseDate(err),
             }
         })?;
-        let hours = (end - start).num_minutes() as f32 / 60.0;
+        let hours = (end - start).num_minutes() as f64 / 60.0;
         let tarief = 18.0;
         let total = hours * tarief;
 

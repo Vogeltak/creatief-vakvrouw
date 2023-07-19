@@ -1,5 +1,5 @@
 use crate::anita::{Anita, AnitaForm};
-use crate::db::add_invoice_to_db;
+use crate::db::{add_invoice_to_db, get_invoices};
 use crate::factuur::{self, Factuur, FactuurForm};
 
 use anyhow::Result;
@@ -14,6 +14,7 @@ use axum::{
     Router, Server,
 };
 use axum_extra::extract::Form;
+use chrono::Datelike;
 use serde::{Deserialize, Deserializer};
 use sqlx::sqlite::SqlitePool;
 use tokio_util::io::ReaderStream;
@@ -37,6 +38,23 @@ struct AnitaTemplate {}
 struct FactuurTemplate {
     client: Option<factuur::Client>,
     items: Vec<factuur::WorkItem>,
+}
+
+#[derive(Template)]
+#[template(path = "history.html")]
+struct HistoryTemplate {
+    grouped_invoices: Vec<(YearMonth, Vec<Factuur>)>,
+}
+
+mod filters {
+    use chrono::{TimeZone, Utc};
+
+    pub fn date<T: std::fmt::Display>(s: T) -> ::askama::Result<String> {
+        let parsed = Utc
+            .datetime_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S UTC")
+            .map_err(|err| ::askama::Error::Custom(Box::new(err)))?;
+        Ok(format!("{}", parsed.format("%Y-%m-%d")))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -65,6 +83,7 @@ pub async fn run() -> Result<()> {
         .route("/anita", post(anita_post))
         .route("/factuur", get(factuur_get))
         .route("/factuur", post(factuur_post))
+        .route("/history", get(history_get))
         .with_state(state);
 
     let server = Server::bind(&"0.0.0.0:1728".parse()?).serve(router.into_make_service());
@@ -215,4 +234,71 @@ async fn factuur_post(
     ];
 
     Ok((headers, body))
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+struct YearMonth {
+    year: i32,
+    month: u32,
+}
+
+impl std::fmt::Display for YearMonth {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let months = HashMap::from([
+            (1, "Januari"),
+            (2, "Februari"),
+            (3, "Maart"),
+            (4, "April"),
+            (5, "Mei"),
+            (6, "Juni"),
+            (7, "Juli"),
+            (8, "Augustus"),
+            (9, "September"),
+            (10, "Oktober"),
+            (11, "November"),
+            (12, "December"),
+        ]);
+
+        let display_month = match months.get(&self.month) {
+            Some(m) => m,
+            None => "Ooit",
+        };
+
+        write!(f, "{} {}", display_month.to_lowercase(), self.year)
+    }
+}
+
+async fn history_get(State(state): State<AppState>) -> HistoryTemplate {
+    let mut conn = state.db.acquire().await.unwrap();
+    let mut invoices = match get_invoices(&mut conn).await {
+        Ok(invoices) => invoices,
+        Err(err) => {
+            println!("Failed to fetch invoices from DB: {:?}", err);
+            vec![]
+        }
+    };
+
+    invoices.sort_by_key(|i| i.nummer);
+    invoices.reverse();
+
+    let mut grouped_invoices = HashMap::new();
+
+    // Group by month
+    for i in invoices {
+        let year_month = YearMonth {
+            year: i.date.year(),
+            month: i.date.month(),
+        };
+        grouped_invoices.entry(year_month).or_insert(vec![]).push(i);
+    }
+
+    let mut grouped_invoices: Vec<(YearMonth, Vec<Factuur>)> = grouped_invoices
+        .into_iter()
+        .map(|(ym, invoices)| (ym, invoices))
+        .collect();
+
+    grouped_invoices.sort_by(|(ym1, _), (ym2, _)| ym1.cmp(ym2));
+    grouped_invoices.reverse();
+
+    HistoryTemplate { grouped_invoices }
 }

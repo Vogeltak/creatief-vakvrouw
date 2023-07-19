@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Facturen - Creatief Vakvrouw{% endblock %}
+{% block content %}
+<header>
+    <h1>Creatief Vakvrouw</h1>
+    <h2>Alle facturen</h2>
+    <h5><a href="/">↩ back</a></h5>
+</header>
+{% for (yearmonth, invoices) in grouped_invoices %}
+<section>
+    <h3>{{ yearmonth }}</h3>
+{% for f in invoices %}
+    <details class="factuur-row">
+        <summary>
+            <span>
+                <span class="tag">{{ f.nummer }}</span>
+                {{ f.client.name }}
+            </span>
+            <span>€{{ "{:.2}"|format(f.subtotal) }}</span>
+        </summary>
+        <div class="factuur-details">
+            <table>
+                {% for i in f.work_items %}
+                <tr>
+                    <td>{{ i.desc }}</td>
+                    <td>€{{ i.euro }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td>BTW</td>
+                    <td>€{{ "{:.2}"|format(f.btw) }}</td>
+                </tr>
+                <tr class="factuur-details-total">
+                    <td>Total</td>
+                    <td>€{{ "{:.2}"|format(f.total) }}</td>
+                </tr>
+            </table>
+            Created at <span class="tag">{{ f.date|date }}</span>
+        </div>
+    </details>
+{% endfor %}
+{% endfor %}
+</section>
+{% endblock %}
