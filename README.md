@@ -1,12 +1,17 @@
-# Creatief Vakvrouw automated administration tools
+# Small business financials
 
-Automate the financial administration of Noemi's business.
-This includes the following tasks:
+A minimalistic web app to manage and automate a small business's financial administration.
 
-- Generate invoices (prefer external sources above manual input)
-- Prepare BTW-aangifte
-- Keep track of balance sheet
-- Keep track of income and costs
+This software is heavily overfitted on Noemi's specific usecases.
+It aims to provide the following workflows:
+
+- [x] Generate invoices (prefer external sources above manual input)
+- [x] Prepare BTW-aangifte
+- [ ] Keep track of balance sheet
+- [ ] Keep track of income and costs
+
+![Dashboard](img/dashboard.png)
+<center><em>The main dashboard linking to all actions</em></center>
 
 ## Getting started
 
@@ -46,6 +51,22 @@ LINDA_AUTH=csrftoken=value; sessionid=value
 ```sh
 docker run --env-file env.list -p 8080:1728 --detach --rm --name facturen creatief-vakvrouw:latest
 ```
+
+### Fly.io
+
+The repository includes a `fly.toml` file.
+To use it, modify the app name and volume source to your respective deployment and run `fly deploy`.
+
+## Screenshots
+
+![List of invoices](img/invoices.png)
+<center><em>Complete history of invoices grouped by month</em></center>
+
+![VAT overview](img/vat.png)
+<center><em>Overview of VAT per quarter as preparation for the tax agency filings</em></center>
+
+![New invoice form](img/new-invoice.png)
+<center><em>Form to generate and store a new invoice. Will remember past clients to speed up fill-out</em></center>
 
 ## Ideas
 
