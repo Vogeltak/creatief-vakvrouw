@@ -20,6 +20,14 @@
             font-family: "Source Serif Pro", "Georgia", serif;
             margin: 0;
         }
+        nav {
+            border-bottom: 1px solid var(--main-color);
+            margin: auto;
+            margin-top: 16px;
+            padding: 8px;
+            text-align: center;
+            width: 50vw;
+        }
         main {
             max-width: 700px;
             margin: auto;
@@ -66,10 +74,23 @@
             box-shadow: 2px 2px var(--shadow-color);
             color: var(--secondary-color);
         }
+        .card {
+            align-items: flex-end;
+            display: flex;
+            height: 130px;
+            width: 130px;
+            padding: 10px;
+        }
         .portal {
             display: flex;
             flex-direction: column;
             row-gap: 16px;
+        }
+        .dashboard {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 16px;
         }
         .flex-row {
             display: flex;
@@ -138,6 +159,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro&display=swap" rel="stylesheet">
 </head>
 <body>
+    <nav>
+        <span>Creatief Vakvrouw</span>
+    </nav>
     <main>
         {% block content %}{% endblock %}
     </main>

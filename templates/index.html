@@ -2,24 +2,24 @@
 {% block title %}Portaal - Creatief Vakvrouw{% endblock %}
 {% block content %}
 <header>
-    <h1>Creatief Vakvrouw</h1>
     <p>
         Portaal naar Noemi's boekhouding en andere administratieve taken.
         Veel van deze functionaliteit is nog <em>work-in-progress</em> en onderhevig aan verandering.
     </p>
 </header>
-<section class="portal">
-    <h3>Nieuwe factuur</h3>
-    <a href="/anita" class="button">Nieuwe Anita</a>
+<h3>Nieuwe factuur</h3>
+<section class="dashboard">
+    <a href="/anita" class="button card">Nieuwe Anita</a>
     {% for (key, client) in clients %}
     {% if key != "anita" %}
-    <a href="/factuur?client={{key}}" class="button">{{client.name}}</a>
+    <a href="/factuur?client={{key}}" class="button card">{{client.name}}</a>
     {% endif %}
     {% endfor %}
-    <a href="/factuur" class="button">Algemeen</a>
-
-    <h3>Overige zaken</h3>
-    <a href="/alle" class="button">Facturen</a>
-    <a href="#" class="button disabled">BTW aangifte</a>
+    <a href="/factuur" class="button card">Algemeen</a>
+</section>
+<h3>Overzicht</h3>
+<section class="dashboard">
+    <a href="/alle" class="button card">Facturen</a>
+    <a href="/btw" class="button card">BTW aangifte</a>
 </section>
 {% endblock %}
