@@ -5,8 +5,38 @@
     <h2>BTW aangifte</h2>
     <p>
         Voor elk kwartaal een overzicht van de totale omzet en de af te dragen BTW.
+        Vergeet niet de voorbelasting (i.e., BTW die jij al hebt betaald) in te vullen bij de Belastingdienst.
     </p>
 </header>
 <section>
+{% for (quarter, btw) in quarters%}
+    <details class="row">
+        <summary>
+            <span>{{ quarter }}</span>
+            <span>€{{ "{:.2}"|format(btw.btw) }} BTW</span>
+        </summary>
+        <div class="details">
+            <table>
+                <tr class="header">
+                    <th>Factuur</th>
+                    <th>Omzet</th>
+                    <th>BTW</th>
+                </tr>
+            {% for f in btw.invoices %}
+                <tr>
+                    <td><a href="/alle#{{ f.nummer }}">{{ f.nummer }}</a></td>
+                    <td>€{{ "{:.2}"|format(f.subtotal) }}</td>
+                    <td>€{{ "{:.2}"|format(f.btw) }}</td>
+                </tr>
+            {% endfor %}
+                <tr class="total">
+                    <td>Total</td>
+                    <td>€{{ "{:.2}"|format(btw.omzet) }}</td>
+                    <td>€{{ "{:.2}"|format(btw.btw) }}</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+{% endfor %}
 </section>
 {% endblock %}

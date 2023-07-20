@@ -108,42 +108,46 @@
         #add-taak {
             margin-bottom: 16px;
         }
-        .factuur-row {
+        .row {
             border: 1px solid var(--main-color);
             cursor: pointer;
             margin-bottom: 12px;
         }
-        .factuur-row[open] {
+        .row[open] {
             box-shadow: 4px 4px var(--shadow-color-card);
         }
-        .factuur-row summary:hover {
+        .row summary:hover {
             background-color: var(--secondary-bg-color);
         }
-        .factuur-row summary {
+        .row summary {
             display: flex;
             flex-direction: row;
             justify-content: space-between;
             padding: 12px;
         }
-        .factuur-row .factuur-details {
+        .row .details, .row .factuur-details {
             padding: 0 12px 12px 12px;
         }
-        .factuur-details table {
+        table {
             border-collapse: collapse;
             margin-bottom: 16px;
             width: 100%;
         }
-        .factuur-details tr {
+        tr {
             border-top: 1px dashed var(--main-color);
         }
-        .factuur-details tr:nth-child(even) {
+        tr:nth-child(even) {
             background-color: var(--secondary-bg-color);
         }
-        .factuur-details-total {
+        tr.total {
             border-top: 1px solid var(--main-color) !important;
             font-weight: bold;
         }
-        .factuur-details td {
+        tr.header {
+            border-top: 0;
+            border-bottom: 1px solid var(--main-color);
+        }
+        th, td {
             text-align: right;
         }
         .factuur-details td:nth-child(2) {

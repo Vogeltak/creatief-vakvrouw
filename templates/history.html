@@ -8,7 +8,7 @@
 <section>
     <h3>{{ yearmonth }}</h3>
     {% for f in invoices %}
-    <details class="factuur-row">
+    <details id="{{ f.nummer }}" class="row">
         <summary>
             <span>
                 <span class="tag">{{ f.nummer }}</span>
@@ -28,7 +28,7 @@
                     <td>BTW</td>
                     <td>€{{ "{:.2}"|format(f.btw) }}</td>
                 </tr>
-                <tr class="factuur-details-total">
+                <tr class="total">
                     <td>Total</td>
                     <td>€{{ "{:.2}"|format(f.total) }}</td>
                 </tr>
