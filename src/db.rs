@@ -1,10 +1,10 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::{TimeZone, Utc};
 use sqlx::SqliteConnection;
 
 use crate::factuur::{Client, Factuur};
 
-pub async fn add_invoice_to_db(conn: &mut SqliteConnection, factuur: &Factuur) -> Result<()> {
+pub async fn add_invoice(conn: &mut SqliteConnection, factuur: &Factuur) -> Result<()> {
     // First make sure that the respective Client entry exists
     sqlx::query!(
         r#"
@@ -80,4 +80,25 @@ INNER JOIN client ON client.id = invoice.client
         .collect();
 
     Ok(res)
+}
+
+pub async fn get_all_clients(conn: &mut SqliteConnection) -> Result<Vec<Client>> {
+    sqlx::query_as!(Client, "SELECT name, address, zip FROM client")
+        .fetch_all(&mut *conn)
+        .await
+        .map_err(|err| anyhow!(err))
+}
+
+pub async fn get_client(conn: &mut SqliteConnection, client_name: &str) -> Result<Option<Client>> {
+    sqlx::query_as!(
+        Client,
+        r#"
+SELECT name, address, zip FROM client
+WHERE name = ?
+        "#,
+        client_name
+    )
+    .fetch_optional(&mut *conn)
+    .await
+    .map_err(|err| anyhow!(err))
 }

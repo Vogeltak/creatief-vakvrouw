@@ -10,9 +10,9 @@
 <h3>Nieuwe factuur</h3>
 <section class="dashboard">
     <a href="/anita" class="button card">Nieuwe Anita</a>
-    {% for (key, client) in clients %}
-    {% if key != "anita" %}
-    <a href="/factuur?client={{key}}" class="button card">{{client.name}}</a>
+    {% for client in clients %}
+    {% if client.name != "V.O.F. De Nieuwe Anita" %}
+    <a href="/factuur?client={{client.name}}" class="button card">{{client.name}}</a>
     {% endif %}
     {% endfor %}
     <a href="/factuur" class="button card">Algemeen</a>

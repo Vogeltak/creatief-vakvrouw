@@ -1,5 +1,5 @@
 use crate::anita::{Anita, AnitaForm};
-use crate::db::{add_invoice_to_db, get_invoices};
+use crate::db;
 use crate::factuur::{self, Factuur, FactuurForm};
 
 use anyhow::Result;
@@ -26,7 +26,7 @@ use std::str::FromStr;
 #[derive(Template)]
 #[template(path = "index.html")]
 struct PortaalTemplate {
-    clients: HashMap<String, factuur::Client>,
+    clients: Vec<factuur::Client>,
 }
 
 #[derive(Template)]
@@ -65,23 +65,14 @@ mod filters {
 
 #[derive(Debug, Clone)]
 struct AppState {
-    clients: HashMap<String, factuur::Client>,
     db: SqlitePool,
 }
 
 pub async fn run() -> Result<()> {
-    let clients = match serde_json::from_str(include_str!("../clients.json")) {
-        Ok(c) => c,
-        Err(_) => anyhow::bail!("invalidly formatted clients.json"),
-    };
-
     let db_pool = SqlitePool::connect("/data/facturen.db?mode=rwc").await?;
     sqlx::migrate!().run(&db_pool).await?;
 
-    let state = AppState {
-        clients,
-        db: db_pool,
-    };
+    let state = AppState { db: db_pool };
 
     let router = Router::new()
         .route("/", get(root_get))
@@ -103,9 +94,13 @@ pub async fn run() -> Result<()> {
 }
 
 async fn root_get(State(state): State<AppState>) -> PortaalTemplate {
-    PortaalTemplate {
-        clients: state.clients,
-    }
+    let mut conn = state.db.acquire().await.unwrap();
+    let clients = match db::get_all_clients(&mut conn).await {
+        Ok(clients) => clients,
+        Err(_) => vec![],
+    };
+
+    PortaalTemplate { clients }
 }
 
 async fn anita_get() -> AnitaTemplate {
@@ -132,8 +127,14 @@ async fn anita_post(
         }
     };
 
+    let mut conn = state.db.acquire().await.unwrap();
+    let anita = match db::get_client(&mut conn, "V.O.F. De Nieuwe Anita").await {
+        Ok(a) => a,
+        Err(_) => None,
+    };
+
     FactuurTemplate {
-        client: state.clients.get("anita").cloned(),
+        client: anita,
         items,
     }
 }
@@ -144,7 +145,13 @@ async fn factuur_get(
 ) -> FactuurTemplate {
     let client = match params.client {
         None => None,
-        Some(key) => state.clients.get(&key).cloned(),
+        Some(key) => {
+            let mut conn = state.db.acquire().await.unwrap();
+            match db::get_client(&mut conn, &key).await {
+                Ok(client) => client,
+                Err(_) => None,
+            }
+        }
     };
 
     FactuurTemplate {
@@ -182,7 +189,7 @@ async fn factuur_post(
 
     // Persist invoice details to the database
     let mut conn = state.db.acquire().await.unwrap();
-    match add_invoice_to_db(&mut conn, &factuur).await {
+    match db::add_invoice(&mut conn, &factuur).await {
         Ok(_) => (),
         Err(err) => {
             return Err((
@@ -277,7 +284,7 @@ impl std::fmt::Display for YearMonth {
 
 async fn history_get(State(state): State<AppState>) -> HistoryTemplate {
     let mut conn = state.db.acquire().await.unwrap();
-    let mut invoices = match get_invoices(&mut conn).await {
+    let mut invoices = match db::get_invoices(&mut conn).await {
         Ok(invoices) => invoices,
         Err(err) => {
             println!("Failed to fetch invoices from DB: {:?}", err);
@@ -343,7 +350,7 @@ struct Btw {
 
 async fn btw_get(State(state): State<AppState>) -> BtwTemplate {
     let mut conn = state.db.acquire().await.unwrap();
-    let mut invoices = match get_invoices(&mut conn).await {
+    let mut invoices = match db::get_invoices(&mut conn).await {
         Ok(invoices) => invoices,
         Err(err) => {
             println!("Failed to fetch invoices from DB: {:?}", err);
