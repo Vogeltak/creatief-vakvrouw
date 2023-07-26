@@ -102,3 +102,14 @@ WHERE name = ?
     .await
     .map_err(|err| anyhow!(err))
 }
+
+pub async fn most_recent_invoice(conn: &mut SqliteConnection) -> Result<Option<usize>> {
+    let res = sqlx::query!("SELECT MAX(nummer) AS nummer FROM invoice")
+        .fetch_one(&mut *conn)
+        .await?;
+
+    match res.nummer {
+        Some(n) => Ok(Some(n as usize)),
+        None => Ok(None),
+    }
+}

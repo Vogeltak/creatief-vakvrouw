@@ -38,6 +38,7 @@ struct AnitaTemplate {}
 struct FactuurTemplate {
     client: Option<factuur::Client>,
     items: Vec<factuur::WorkItem>,
+    most_recent_invoice_id: Option<usize>,
 }
 
 #[derive(Template)]
@@ -128,14 +129,21 @@ async fn anita_post(
     };
 
     let mut conn = state.db.acquire().await.unwrap();
+
     let anita = match db::get_client(&mut conn, "V.O.F. De Nieuwe Anita").await {
         Ok(a) => a,
+        Err(_) => None,
+    };
+
+    let most_recent_invoice_id = match db::most_recent_invoice(&mut conn).await {
+        Ok(i) => i,
         Err(_) => None,
     };
 
     FactuurTemplate {
         client: anita,
         items,
+        most_recent_invoice_id,
     }
 }
 
@@ -143,20 +151,25 @@ async fn factuur_get(
     State(state): State<AppState>,
     Query(params): Query<FactuurParams>,
 ) -> FactuurTemplate {
+    let mut conn = state.db.acquire().await.unwrap();
+
     let client = match params.client {
         None => None,
-        Some(key) => {
-            let mut conn = state.db.acquire().await.unwrap();
-            match db::get_client(&mut conn, &key).await {
-                Ok(client) => client,
-                Err(_) => None,
-            }
-        }
+        Some(key) => match db::get_client(&mut conn, &key).await {
+            Ok(client) => client,
+            Err(_) => None,
+        },
+    };
+
+    let most_recent_invoice_id = match db::most_recent_invoice(&mut conn).await {
+        Ok(i) => i,
+        Err(_) => None,
     };
 
     FactuurTemplate {
         client,
         items: vec![],
+        most_recent_invoice_id,
     }
 }
 

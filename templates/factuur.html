@@ -5,8 +5,14 @@
     <h2>Nieuwe factuur</h2>
 </header>
 <form class="portal" action="/factuur" method="post">
-    <label for="factuur_nummer">Factuurnummer:</label>
-    <input id="factuur_nummer" type="number" name="factuur_nummer" required>
+    {% match most_recent_invoice_id %}
+        {% when Some with (id) %}
+            <label for="factuur_nummer">Factuurnummer (laatste was <span class="tag">{{ id }}</span>):</label>
+            <input id="factuur_nummer" type="number" name="factuur_nummer" value="{{ id + 1 }}" required>
+        {% when None %}
+            <label for="factuur_nummer">Factuurnummer:</label>
+            <input id="factuur_nummer" type="number" name="factuur_nummer" required>
+    {% endmatch %}
     <h3>Klant</h3>
     {% match client %}
       {% when Some with (client) %}
