@@ -387,7 +387,7 @@ async fn btw_get(State(state): State<AppState>) -> BtwTemplate {
         let q = Quarter {
             year: i.date.year(),
             // Default division behavior on unsigned integers is to floor
-            quarter: i.date.month() / 4 + 1,
+            quarter: ((i.date.month() as f32) / 3.0).ceil() as u32,
         };
         grouped_invoices.entry(q).or_insert(vec![]).push(i);
     }
