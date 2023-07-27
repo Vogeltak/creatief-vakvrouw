@@ -57,10 +57,16 @@ mod filters {
     use chrono::{TimeZone, Utc};
 
     pub fn date<T: std::fmt::Display>(s: T) -> ::askama::Result<String> {
-        let parsed = Utc
-            .datetime_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S UTC")
-            .map_err(|err| ::askama::Error::Custom(Box::new(err)))?;
-        Ok(format!("{}", parsed.format("%Y-%m-%d")))
+        // Entries ingested from Rust are explicitly set to RFC 3339 format
+        match Utc.datetime_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S.%f UTC") {
+            Ok(d) => Ok(format!("{}", d.format("%Y-%m-%d"))),
+            Err(_) => match Utc.datetime_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S UTC") {
+                // Fallback to default SQLite datetime() output
+                Ok(d) => Ok(format!("{}", d.format("%Y-%m-%d"))),
+                // Otherwise, just parrot back the original format
+                Err(_) => Ok(format!("{s}")),
+            },
+        }
     }
 }
 

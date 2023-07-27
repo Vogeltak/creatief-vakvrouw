@@ -31,6 +31,7 @@ SELECT id FROM client WHERE name = ?
     // invoice in the database.
     let nummer = factuur.nummer as i32;
     let work_items = serde_json::to_string(&factuur.work_items)?;
+    let date = factuur.date.to_rfc3339();
 
     // Insert the new invoice into the database
     sqlx::query!(
@@ -44,7 +45,7 @@ VALUES ( ?, ?, ?, ?, ?, ?, ? )
         factuur.subtotal,
         factuur.btw,
         factuur.total,
-        factuur.date
+        date
     )
     .execute(&mut *conn)
     .await?;
