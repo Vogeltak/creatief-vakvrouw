@@ -28,6 +28,13 @@
             text-align: center;
             width: 50vw;
         }
+        nav > a {
+            color: var(--main-color);
+            text-decoration: none;
+        }
+        nav > a:visited {
+            color: var(--main-color);
+        }
         main {
             max-width: 700px;
             margin: auto;
@@ -165,7 +172,7 @@
 </head>
 <body>
     <nav>
-        <span>Creatief Vakvrouw</span>
+        <a href="/">Creatief Vakvrouw</a>
     </nav>
     <main>
         {% block content %}{% endblock %}
