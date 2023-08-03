@@ -56,6 +56,8 @@ struct BtwTemplate {
 mod filters {
     use chrono::{TimeZone, Utc};
 
+    use crate::factuur::Factuur;
+
     pub fn date<T: std::fmt::Display>(s: T) -> ::askama::Result<String> {
         // Entries ingested from Rust are explicitly set to RFC 3339 format
         match Utc.datetime_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S.%f UTC") {
@@ -67,6 +69,10 @@ mod filters {
                 Err(_) => Ok(format!("{s}")),
             },
         }
+    }
+
+    pub fn sum_invoices(invoices: &[Factuur]) -> ::askama::Result<f64> {
+        Ok(invoices.iter().map(|i| i.subtotal).sum())
     }
 }
 
