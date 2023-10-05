@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Login - Creatief Vakvrouw{% endblock %}
+{% block content %}
+<!--section style="display: flex;flex-direction: column;align-items: center;row-gap: 20px;">
+  <h2>Toegang</h2>
+  <p>Hey! Leuk dat je geïnteresseerd bent in de business financiën van Creatief Vakvrouw. Maar eigenlijk heb je hier helemaal niets te zoeken. Misschien kijk je liever op <a href="https://creatiefvakvrouw.nl">creatiefvakvrouw.nl</a> voor een vriendelijke introductie tot Noemi's werk. Ben je echt Noemi—dan heb ik niks gezegd. Je hoeft het alleen maar even te bewijzen...</p>
+  <input type="password">
+  <input class="button" type="submit" value="Log in">
+</section-->
+<header>
+    <h2>Toegang</h2>
+    <p>Hey! Leuk dat je geïnteresseerd bent in de business financiën van Creatief Vakvrouw. Maar eigenlijk heb je hier helemaal niets te zoeken. Misschien kijk je liever op <a href="https://creatiefvakvrouw.nl">creatiefvakvrouw.nl</a> voor een vriendelijke introductie tot Noemi's werk. Ben je echt Noemi—dan heb ik niks gezegd. Je hoeft het alleen maar even te bewijzen...</p>
+</header>
+<form id="login" class="portal" action="/login" method="post">
+    <label for="password">Wachtzin:</label>
+    <input id="password" name="password" type="password">
+    <input class="button" type="submit" value="Log in">
+</form>
+{% endblock %}

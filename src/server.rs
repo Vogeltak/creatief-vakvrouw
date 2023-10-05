@@ -1,4 +1,8 @@
-use crate::factuur::{self};
+use std::collections::HashMap;
+use std::env;
+use std::sync::Arc;
+
+use crate::factuur;
 use crate::{db, routes};
 
 use anyhow::Result;
@@ -9,14 +13,16 @@ use axum::{
     routing::{get, post},
     Router, Server,
 };
+use axum_login::axum_sessions::async_session::MemoryStore as SessionMemoryStore;
+use axum_login::axum_sessions::SessionLayer;
+use axum_login::memory_store::MemoryStore as AuthMemoryStore;
+use axum_login::secrecy::SecretVec;
+use axum_login::{AuthLayer, AuthUser, RequireAuthorizationLayer};
+
+use rand::Rng;
 
 use sqlx::sqlite::SqlitePool;
-
-#[derive(Template)]
-#[template(path = "index.html")]
-struct PortaalTemplate {
-    clients: Vec<factuur::Client>,
-}
+use tokio::sync::RwLock;
 
 pub mod filters {
     use chrono::{TimeZone, Utc};
@@ -44,13 +50,56 @@ pub mod filters {
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub db: SqlitePool,
+    pub user: User,
+}
+
+#[derive(Debug, Clone)]
+pub struct User {
+    pub id: usize,
+    pub password_hash: String,
+}
+
+impl User {
+    fn new() -> Result<Self> {
+        let secret = env::var("USER_SECRET")?;
+        Ok(User {
+            id: 1,
+            password_hash: secret,
+        })
+    }
+}
+
+impl AuthUser<usize> for User {
+    fn get_id(&self) -> usize {
+        self.id
+    }
+
+    fn get_password_hash(&self) -> SecretVec<u8> {
+        SecretVec::new(self.password_hash.clone().into())
+    }
 }
 
 pub async fn run() -> Result<()> {
     let db_pool = SqlitePool::connect("/data/facturen.db?mode=rwc").await?;
     sqlx::migrate!().run(&db_pool).await?;
 
-    let state = AppState { db: db_pool };
+    let user = User::new()?;
+    let state = AppState {
+        db: db_pool,
+        user: user.clone(),
+    };
+
+    let secret = rand::thread_rng().gen::<[u8; 64]>();
+
+    let session_store = SessionMemoryStore::new();
+    let session_layer = SessionLayer::new(session_store, &secret);
+
+    let store = Arc::new(RwLock::new(HashMap::default()));
+
+    store.write().await.insert(user.get_id(), user);
+
+    let user_store = AuthMemoryStore::new(&store);
+    let auth_layer = AuthLayer::new(user_store, &secret);
 
     let router = Router::new()
         .route("/", get(root_get))
@@ -60,6 +109,14 @@ pub async fn run() -> Result<()> {
         .route("/factuur", post(routes::factuur::post))
         .route("/alle", get(routes::report::history_get))
         .route("/btw", get(routes::report::btw_get))
+        .route_layer(RequireAuthorizationLayer::<usize, User>::login_or_redirect(
+            Arc::new("/login".into()),
+            None,
+        ))
+        .route("/login", get(routes::auth::login_get))
+        .route("/login", post(routes::auth::login_post))
+        .layer(auth_layer)
+        .layer(session_layer)
         .with_state(state);
 
     let server = Server::bind(&"0.0.0.0:1728".parse()?).serve(router.into_make_service());
@@ -69,6 +126,12 @@ pub async fn run() -> Result<()> {
     server.await?;
 
     Ok(())
+}
+
+#[derive(Template)]
+#[template(path = "index.html")]
+struct PortaalTemplate {
+    clients: Vec<factuur::Client>,
 }
 
 async fn root_get(State(state): State<AppState>) -> PortaalTemplate {
