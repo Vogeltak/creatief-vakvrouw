@@ -32,6 +32,9 @@
     {% endmatch %}
 
     <h3>Werkzaamheden</h3>
+
+    <button id="prepend-taak" type="button" class="button"><strong>+</strong></button>
+
     {% for item in items %}
     <div class="flex-row">
         <input name="task" type="text" placeholder="Omschrijving" value="{{ item.desc }}">
@@ -44,7 +47,7 @@
     </div>
     {% endfor %}
 
-    <button id="add-taak" type="button" class="button"><strong>+ taak</strong></button>
+    <button id="append-taak" type="button" class="button"><strong>+</strong></button>
 
     <p>
         Als alles ingevuld is, genereren we automatisch een PDF voor je factuur.
@@ -57,17 +60,33 @@
 {% endblock %}
 {% block javascript %}
 <script type="text/javascript">
-    let b = document.getElementById("add-taak");
-    b.onclick = function() {
+    document.getElementById("prepend-taak").addEventListener(
+        "click",
+        (event) => {
+            add_taak(false);
+        }
+    );
+    document.getElementById("append-taak").addEventListener(
+        "click",
+        (event) => {
+            add_taak(true);
+        }
+    );
+
+    function add_taak(append) {
         let tasks = document.getElementsByClassName("flex-row");
-        let last_task = tasks[tasks.length - 1];
-        let new_task = last_task.cloneNode(true);
+        let task = tasks[append ? tasks.length - 1 : 0];
+        let new_task = task.cloneNode(true);
         let desc = new_task.firstElementChild;
         let price = new_task.lastElementChild;
         desc.value = "";
         price.value = "";
     
-        last_task.after(new_task);
+        if (append) {
+            task.after(new_task);
+        } else {
+            task.before(new_task);
+        }
     }
 </script>
 {% endblock %}
