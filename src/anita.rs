@@ -49,11 +49,15 @@ impl Anita {
                     .filter(|e| e.person == self.employee),
             );
 
-            // Break out if we are currently starting in a week that is past the
-            // month we were processing.
+            // Break out if we are about to start in a week that is past the
+            // month we were processing or when we're in a different year altogether.
             let start_month = v.start_date.split('-').take(2).last().unwrap();
             let end_month = v.end_date.split('-').take(2).last().unwrap();
-            if start_month > month.as_str() || end_month > month.as_str() {
+            let end_year = v.end_date.split_once('-').unwrap().0;
+            if start_month > month.as_str()
+                || end_month > month.as_str()
+                || end_year > year.as_str()
+            {
                 break;
             }
 
