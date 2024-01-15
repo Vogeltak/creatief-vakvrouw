@@ -1,8 +1,9 @@
 use anyhow::Result;
+use chrono::NaiveDate;
 use reqwest::Url;
 use serde::Deserialize;
 
-use std::env;
+use std::{env, str::FromStr};
 
 use crate::event::{Event, Week};
 
@@ -17,10 +18,24 @@ impl Anita {
     }
 
     pub async fn get_events_from_month(&self, month: String, year: String) -> Result<Vec<Event>> {
-        let mut week = month.parse::<u32>()? * 4 - 4;
+        let (year, month) = (year.parse::<i32>()?, month.parse::<u32>()?);
+        let mut week = month * 4 - 4;
         let mut events: Vec<Event> = vec![];
         let auth_cookie = env::var("LINDA_AUTH")?;
         let client = reqwest::Client::new();
+
+        // Create a date that implements Ord so we can check if we should
+        // stop fetching weeks from the l1nda yet.
+        // We use the first day of the next month.
+        let first_day_out_of_scope = {
+            let (next_y, next_m) = match month {
+                1..=11 => (year, month + 1),
+                12 => (year + 1, 1),
+                _ => return Err(anyhow::anyhow!("invalid month: {month}")),
+            };
+            NaiveDate::from_ymd_opt(next_y, next_m, 1)
+        }
+        .ok_or(anyhow::anyhow!("date is out-of-range"))?;
 
         loop {
             let url = format!(
@@ -44,20 +59,18 @@ impl Anita {
                 v.schedule
                     .iter()
                     .flat_map(|r| r.days.clone())
-                    .filter(|d| d.date.starts_with(format!("{}-{}", year, month).as_str()))
+                    .filter(|d| {
+                        d.date
+                            .starts_with(format!("{}-{:02}", year, month).as_str())
+                    })
                     .flat_map(|d| d.events)
                     .filter(|e| e.person == self.employee),
             );
 
-            // Break out if we are about to start in a week that is past the
-            // month we were processing or when we're in a different year altogether.
-            let start_month = v.start_date.split('-').take(2).last().unwrap();
-            let end_month = v.end_date.split('-').take(2).last().unwrap();
-            let end_year = v.end_date.split_once('-').unwrap().0;
-            if start_month > month.as_str()
-                || end_month > month.as_str()
-                || end_year > year.as_str()
-            {
+            // Stop querying if we are about to start in a week that is past
+            // the month we were processing.
+            let week_end_date = NaiveDate::from_str(&v.end_date)?;
+            if week_end_date >= first_day_out_of_scope {
                 break;
             }
 
