@@ -7,8 +7,10 @@ It aims to provide the following workflows:
 
 - [x] Generate invoices (prefer external sources above manual input)
 - [x] Prepare BTW-aangifte
+- [ ] Save invoice PDFs in SQLite
 - [ ] Keep track of balance sheet
 - [ ] Keep track of income and costs
+- [ ] Use Typst to render invoices instead of LaTeX (see the [Typst port](https://github.com/erictapen/typst-invoice) of mrzool's [invoice template](https://github.com/mrzool/invoice-boilerplate/)) 
 
 ![Dashboard](img/dashboard.png)
 <center><em>The main dashboard linking to all actions</em></center>
@@ -67,8 +69,3 @@ To use it, modify the app name and volume source to your respective deployment a
 
 ![New invoice form](img/new-invoice.png)
 <center><em>Form to generate and store a new invoice. Will remember past clients to speed up fill-out</em></center>
-
-## Ideas
-
-- Use [WeasyPrint](https://doc.courtbouillon.org/weasyprint/stable/) instead of LaTeX to create PDF invoices
-- Use [Typst](https://github.com/typst/typst) typesetting system instead of LaTeX
