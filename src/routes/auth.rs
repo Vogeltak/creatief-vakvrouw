@@ -5,14 +5,19 @@ use axum::{extract::State, response::Redirect, Form};
 use axum_login::{extractors::AuthContext, memory_store::MemoryStore as AuthMemoryStore};
 use serde::Deserialize;
 
-use crate::server::{AppState, User};
+use crate::{
+    server::{AppState, User},
+    Page,
+};
 
 #[derive(Template)]
 #[template(path = "login.html")]
-pub struct LoginTemplate {}
+pub struct LoginTemplate {
+    page: Page,
+}
 
 pub async fn login_get() -> LoginTemplate {
-    LoginTemplate {}
+    LoginTemplate { page: Page::Auth }
 }
 
 #[derive(Clone, Debug, Deserialize)]

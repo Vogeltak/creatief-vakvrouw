@@ -8,17 +8,20 @@ use crate::{
     db,
     factuur::Factuur,
     server::{filters, AppState},
+    Page,
 };
 
 #[derive(Template)]
 #[template(path = "history.html")]
 pub struct HistoryTemplate {
+    page: Page,
     grouped_invoices: Vec<(YearMonth, Vec<Factuur>)>,
 }
 
 #[derive(Template)]
 #[template(path = "btw.html")]
 pub struct BtwTemplate {
+    page: Page,
     quarters: Vec<(Quarter, Btw)>,
 }
 
@@ -86,7 +89,10 @@ pub async fn history_get(State(state): State<AppState>) -> HistoryTemplate {
     grouped_invoices.sort_by(|(ym1, _), (ym2, _)| ym1.cmp(ym2));
     grouped_invoices.reverse();
 
-    HistoryTemplate { grouped_invoices }
+    HistoryTemplate {
+        page: Page::Facturen,
+        grouped_invoices,
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -165,6 +171,7 @@ pub async fn btw_get(State(state): State<AppState>) -> BtwTemplate {
     grouped_invoices.reverse();
 
     BtwTemplate {
+        page: Page::Btw,
         quarters: grouped_invoices,
     }
 }

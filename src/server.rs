@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
-use crate::factuur;
 use crate::{db, routes};
+use crate::{factuur, Page};
 
 use anyhow::Result;
 use askama::Template;
@@ -19,6 +19,7 @@ use axum_login::memory_store::MemoryStore as AuthMemoryStore;
 use axum_login::secrecy::SecretVec;
 use axum_login::{AuthLayer, AuthUser, RequireAuthorizationLayer};
 
+use chrono::prelude::*;
 use rand::Rng;
 
 use sqlx::sqlite::SqlitePool;
@@ -107,7 +108,7 @@ pub async fn run() -> Result<()> {
         .route("/anita", post(routes::anita::post))
         .route("/factuur", get(routes::factuur::get))
         .route("/factuur", post(routes::factuur::post))
-        .route("/alle", get(routes::report::history_get))
+        .route("/facturen", get(routes::report::history_get))
         .route("/btw", get(routes::report::btw_get))
         .route_layer(RequireAuthorizationLayer::<usize, User>::login_or_redirect(
             Arc::new("/login".into()),
@@ -131,7 +132,10 @@ pub async fn run() -> Result<()> {
 #[derive(Template)]
 #[template(path = "index.html")]
 struct PortaalTemplate {
+    page: Page,
     clients: Vec<factuur::Client>,
+    omzet: f64,
+    laatste: Option<factuur::Factuur>,
 }
 
 async fn root_get(State(state): State<AppState>) -> PortaalTemplate {
@@ -141,5 +145,29 @@ async fn root_get(State(state): State<AppState>) -> PortaalTemplate {
         Err(_) => vec![],
     };
 
-    PortaalTemplate { clients }
+    let mut invoices = match db::get_invoices(&mut conn).await {
+        Ok(invoices) => invoices,
+        Err(err) => {
+            println!("Failed to fetch invoices for dashboard: {err}");
+            vec![]
+        }
+    };
+
+    let now = Utc::now();
+    let omzet = invoices
+        .iter()
+        .filter(|i| i.date.year() == now.year())
+        .map(|i| i.subtotal)
+        .sum();
+
+    invoices.sort_by_key(|i| i.nummer);
+    invoices.reverse();
+    let laatste = invoices.first().cloned();
+
+    PortaalTemplate {
+        page: Page::Dashboard,
+        clients,
+        omzet,
+        laatste,
+    }
 }

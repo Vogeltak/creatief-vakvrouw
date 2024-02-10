@@ -6,16 +6,19 @@ use crate::{
     anita::{Anita, AnitaForm},
     db, factuur,
     server::AppState,
+    Page,
 };
 
 use super::factuur::FactuurTemplate;
 
 #[derive(Template)]
 #[template(path = "anita.html")]
-pub struct AnitaTemplate {}
+pub struct AnitaTemplate {
+    page: Page,
+}
 
 pub async fn get() -> AnitaTemplate {
-    AnitaTemplate {}
+    AnitaTemplate { page: Page::Anita }
 }
 
 pub async fn post(
@@ -51,6 +54,7 @@ pub async fn post(
     };
 
     FactuurTemplate {
+        page: Page::Factuur,
         client: anita,
         items,
         most_recent_invoice_id,

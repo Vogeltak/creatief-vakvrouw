@@ -15,11 +15,13 @@ use crate::{
     db,
     factuur::{self, Factuur, FactuurForm},
     server::AppState,
+    Page,
 };
 
 #[derive(Template)]
 #[template(path = "factuur.html")]
 pub struct FactuurTemplate {
+    pub page: Page,
     pub client: Option<factuur::Client>,
     pub items: Vec<factuur::WorkItem>,
     pub most_recent_invoice_id: Option<usize>,
@@ -45,6 +47,7 @@ pub async fn get(
     };
 
     FactuurTemplate {
+        page: Page::Factuur,
         client,
         items: vec![],
         most_recent_invoice_id,

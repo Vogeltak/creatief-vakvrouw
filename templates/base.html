@@ -9,10 +9,11 @@
             --secondary-color: #888;
             --main-bg-color: white;
             --secondary-bg-color: #f5f5f5;
-            --tertiary-bg-color: #f0f0f0;
+            --tertiary-bg-color: #e6e6e6;
             --shadow-color: #ddd;
             --shadow-color-card: #666;
             --tag-color: #e6e6e6;
+            --accent-color: #3f5db3;
         }
         body {
             background-color: var(--main-bg-color);
@@ -21,17 +22,44 @@
             margin: 0;
         }
         nav {
-            background-color: rgb(242, 242, 247);
+            background-color: var(--secondary-bg-color);
             border-bottom: 1px solid var(--main-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
             padding: 10px;
             text-align: center;
         }
-        nav > a {
+        nav a {
+            border-radius: 4px;
             color: var(--main-color);
+            display: flex;
+            align-items: center;
+            padding: 2px 6px 2px 4px;
             text-decoration: none;
         }
-        nav > a:visited {
+        nav a:visited {
             color: var(--main-color);
+        }
+        nav svg {
+            transform: scale(0.7);
+            fill: var(--main-color);
+        }
+        nav a:hover {
+            background: var(--tertiary-bg-color);
+        }
+        nav a.current {
+            background: var(--tertiary-bg-color);
+            color: var(--accent-color);
+        }
+        nav a.current svg {
+            fill: var(--accent-color);
+        }
+        nav > div {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
         }
         main {
             max-width: 700px;
@@ -81,11 +109,17 @@
             color: var(--secondary-color);
         }
         .card {
-            align-items: flex-end;
+            align-items: center;
+            border: 1px solid var(--main-color);
+            /*box-shadow: 4px 4px var(--shadow-color-card);*/
             display: flex;
+            flex-direction: column;
+            gap: 8px;
             height: 130px;
-            width: 130px;
+            justify-content: center;
             padding: 10px;
+            text-align: center;
+            width: 130px;
         }
         .portal {
             display: flex;
@@ -97,6 +131,11 @@
             flex-direction: row;
             flex-wrap: wrap;
             gap: 16px;
+            justify-content: center;
+            margin-bottom: 64px;
+        }
+        .dashboard h5 {
+            margin: 8px 0;
         }
         .flex-row {
             display: flex;
@@ -167,7 +206,23 @@
 </head>
 <body>
     <nav>
-        <a href="/">Creatief Vakvrouw</a>
+        <div>
+            <strong>Creatief Vakvrouw</strong>
+        </div>
+        <div>
+            <a href="/" {% if page == Page::Dashboard %}class="current"{% endif %}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256"><path d="M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z"></path></svg>
+                Dashboard
+            </a>
+            <a href="/facturen" {% if page == Page::Facturen %}class="current"{% endif %}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256"><path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"></path></svg>
+                Facturen
+            </a>
+            <a href="/btw" {% if page == Page::Btw %}class="current"{% endif %}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256"><path d="M24,104H48v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16H208V104h24a8,8,0,0,0,4.19-14.81l-104-64a8,8,0,0,0-8.38,0l-104,64A8,8,0,0,0,24,104Zm40,0H96v64H64Zm80,0v64H112V104Zm48,64H160V104h32ZM128,41.39,203.74,88H52.26ZM248,208a8,8,0,0,1-8,8H16a8,8,0,0,1,0-16H240A8,8,0,0,1,248,208Z"></path></svg>
+                BTW
+            </a>
+        </div>
     </nav>
     <main>
         {% block content %}{% endblock %}

@@ -5,3 +5,13 @@ pub mod event;
 pub mod factuur;
 pub mod routes;
 pub mod server;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Page {
+    Dashboard,
+    Facturen,
+    Btw,
+    Anita,
+    Factuur,
+    Auth,
+}

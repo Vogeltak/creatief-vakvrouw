@@ -1,25 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Portaal - Creatief Vakvrouw{% endblock %}
 {% block content %}
-<header>
-    <p>
-        Portaal naar Noemi's boekhouding en andere administratieve taken.
-        Veel van deze functionaliteit is nog <em>work-in-progress</em> en onderhevig aan verandering.
-    </p>
-</header>
+<section class="dashboard">
+    <div>
+        <h5>Omzet dit jaar</h5>
+        <span class="card"><h2>€{{ "{:.2}"|format(omzet) }}</h2></span>
+    </div>
+    {% if let Some(factuur) = laatste %}
+    <div>
+        <h5>Laatste factuur</h5>
+        <span class="card">
+            <span class="tag">{{ factuur.nummer }}</span>
+            {{ factuur.client.name }}
+            <strong>€{{ "{:.2}"|format(factuur.subtotal) }}</strong>
+        </span>
+    </div>
+    {% endif %}
+</section>
 <h3>Nieuwe factuur</h3>
 <section class="dashboard">
-    <a href="/anita" class="button card">Nieuwe Anita</a>
+    <a href="/anita" class="button">Nieuwe Anita</a>
     {% for client in clients %}
     {% if client.name != "V.O.F. De Nieuwe Anita" %}
-    <a href="/factuur?client={{client.name}}" class="button card">{{client.name}}</a>
+    <a href="/factuur?client={{client.name}}" class="button">{{client.name}}</a>
     {% endif %}
     {% endfor %}
-    <a href="/factuur" class="button card">Algemeen</a>
-</section>
-<h3>Overzicht</h3>
-<section class="dashboard">
-    <a href="/alle" class="button card">Facturen</a>
-    <a href="/btw" class="button card">BTW aangifte</a>
+    <a href="/factuur" class="button">Algemeen</a>
 </section>
 {% endblock %}
