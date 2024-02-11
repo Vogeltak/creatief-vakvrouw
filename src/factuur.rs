@@ -103,7 +103,7 @@ impl TryFrom<event::Event> for WorkItem {
             }
         })?;
         let hours = (end - start).num_minutes() as f64 / 60.0;
-        let tarief = 18.0;
+        let tarief = 22.0;
         let total = hours * tarief;
 
         Ok(Self { desc, euro: total })
