@@ -24,7 +24,7 @@
                 </tr>
             {% for f in btw.invoices %}
                 <tr>
-                    <td><a href="/alle#{{ f.nummer }}">{{ f.nummer }}</a></td>
+                    <td><a href="/facturen#{{ f.nummer }}">{{ f.nummer }}</a></td>
                     <td>€{{ "{:.2}"|format(f.subtotal) }}</td>
                     <td>€{{ "{:.2}"|format(f.btw) }}</td>
                 </tr>

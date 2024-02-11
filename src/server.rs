@@ -108,6 +108,7 @@ pub async fn run() -> Result<()> {
         .route("/anita", post(routes::anita::post))
         .route("/factuur", get(routes::factuur::get))
         .route("/factuur", post(routes::factuur::post))
+        .route("/download", get(routes::factuur::download))
         .route("/facturen", get(routes::report::history_get))
         .route("/btw", get(routes::report::btw_get))
         .route_layer(RequireAuthorizationLayer::<usize, User>::login_or_redirect(

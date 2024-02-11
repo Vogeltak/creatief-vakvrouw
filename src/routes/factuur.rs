@@ -2,14 +2,10 @@ use std::{fmt::Display, str::FromStr};
 
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::{
-    body::StreamBody,
-    extract::{Query, State},
-};
+use axum::extract::{Query, State};
 use axum_extra::extract::Form;
 use reqwest::{header, StatusCode};
 use serde::{Deserialize, Deserializer};
-use tokio_util::io::ReaderStream;
 
 use crate::{
     db,
@@ -81,22 +77,6 @@ pub async fn post(
 ) -> impl IntoResponse {
     let factuur = Factuur::from(factuur_form);
 
-    // Persist invoice details to the database
-    let mut conn = state.db.acquire().await.unwrap();
-    match db::add_invoice(&mut conn, &factuur).await {
-        Ok(_) => (),
-        Err(err) => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!(
-                    "Hey, foutje tijdens het updaten van de database. \
-                    Laat dit even zien aan Max:\n\n {}",
-                    err
-                ),
-            ))
-        }
-    };
-
     let factuur_file = match factuur.generate_pdf() {
         Ok(f) => f,
         Err(err) => {
@@ -111,8 +91,8 @@ pub async fn post(
         }
     };
 
-    let file = match tokio::fs::File::open(&factuur_file).await {
-        Ok(file) => file,
+    let pdf = match tokio::fs::read(&factuur_file).await {
+        Ok(pdf) => pdf,
         Err(err) => {
             return Err((
                 StatusCode::NOT_FOUND,
@@ -125,10 +105,21 @@ pub async fn post(
         }
     };
 
-    // Convert the `AsyncRead` into a `Stream`
-    let stream = ReaderStream::new(file);
-    // Convert the `Stream` into an `axum::body::HttpBody`
-    let body = StreamBody::new(stream);
+    // Persist invoice details to the database
+    let mut conn = state.db.acquire().await.unwrap();
+    match db::add_invoice(&mut conn, &factuur, &pdf).await {
+        Ok(_) => (),
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!(
+                    "Hey, foutje tijdens het updaten van de database. \
+                    Laat dit even zien aan Max:\n\n {}",
+                    err
+                ),
+            ))
+        }
+    };
 
     let headers = [
         (header::CONTENT_TYPE, "application/pdf".to_owned()),
@@ -141,5 +132,40 @@ pub async fn post(
         ),
     ];
 
-    Ok((headers, body))
+    Ok((headers, pdf))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FactuurDownloadParams {
+    factuur: usize,
+}
+
+pub async fn download(
+    State(state): State<AppState>,
+    Query(params): Query<FactuurDownloadParams>,
+) -> impl IntoResponse {
+    let mut conn = state.db.acquire().await.unwrap();
+    let (name, pdf) = match db::get_pdf(&mut conn, params.factuur as u32).await {
+        Ok((n, p)) => (n, p),
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!(
+                    "Hey, er gings iets mis bij het ophalen van de factuur uit de database. \
+                    Laat dit even zien aan Max:\n\n {}",
+                    err
+                ),
+            ))
+        }
+    };
+
+    let headers = [
+        (header::CONTENT_TYPE, "application/pdf".to_owned()),
+        (
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{}\"", name),
+        ),
+    ];
+
+    Ok((headers, pdf))
 }

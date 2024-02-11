@@ -4,7 +4,11 @@ use sqlx::SqliteConnection;
 
 use crate::factuur::{Client, Factuur};
 
-pub async fn add_invoice(conn: &mut SqliteConnection, factuur: &Factuur) -> Result<()> {
+pub async fn add_invoice(
+    conn: &mut SqliteConnection,
+    factuur: &Factuur,
+    pdf: &Vec<u8>,
+) -> Result<()> {
     // First make sure that the respective Client entry exists
     sqlx::query!(
         r#"
@@ -27,6 +31,18 @@ SELECT id FROM client WHERE name = ?
     .fetch_one(&mut *conn)
     .await?;
 
+    // Insert PDF binary blob into the database
+    let pdf_id = sqlx::query!(
+        r#"
+INSERT INTO pdf ( file )
+VALUES ( ? )
+        "#,
+        pdf
+    )
+    .execute(&mut *conn)
+    .await?
+    .last_insert_rowid();
+
     // Calculate some additional information to store alongside the mvp
     // invoice in the database.
     let nummer = factuur.nummer as i32;
@@ -36,11 +52,12 @@ SELECT id FROM client WHERE name = ?
     // Insert the new invoice into the database
     sqlx::query!(
         r#"
-INSERT INTO invoice ( nummer, client, work_items, subtotal, btw, total, created_at )
-VALUES ( ?, ?, ?, ?, ?, ?, ? )
+INSERT INTO invoice ( nummer, client, pdf, work_items, subtotal, btw, total, created_at )
+VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )
         "#,
         nummer,
         client.id,
+        pdf_id,
         work_items,
         factuur.subtotal,
         factuur.btw,
@@ -113,4 +130,29 @@ pub async fn most_recent_invoice(conn: &mut SqliteConnection) -> Result<Option<u
         Some(n) => Ok(Some(n as usize)),
         None => Ok(None),
     }
+}
+
+pub async fn get_pdf(
+    conn: &mut SqliteConnection,
+    factuur_nummer: u32,
+) -> Result<(String, Vec<u8>)> {
+    let res = sqlx::query!(
+        r#"
+SELECT client.name, pdf FROM invoice
+INNER JOIN client ON client.id = invoice.client
+WHERE nummer = ?
+        "#,
+        factuur_nummer
+    )
+    .fetch_one(&mut *conn)
+    .await?;
+
+    let pdf = sqlx::query!("SELECT file FROM pdf WHERE id = ?", res.pdf)
+        .fetch_one(&mut *conn)
+        .await?;
+
+    Ok((
+        format!("Factuur {} {}.pdf", res.name.clone(), factuur_nummer),
+        pdf.file,
+    ))
 }
