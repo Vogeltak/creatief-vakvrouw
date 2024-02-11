@@ -7,7 +7,7 @@ It aims to provide the following workflows:
 
 - [x] Generate invoices (prefer external sources above manual input)
 - [x] Prepare BTW-aangifte
-- [ ] Save invoice PDFs in SQLite
+- [x] Save invoice PDFs in SQLite
 - [ ] Keep track of balance sheet
 - [ ] Keep track of income and costs
 - [ ] Use Typst to render invoices instead of LaTeX (see the [Typst port](https://github.com/erictapen/typst-invoice) of mrzool's [invoice template](https://github.com/mrzool/invoice-boilerplate/)) 
