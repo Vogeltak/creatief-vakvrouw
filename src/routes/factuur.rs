@@ -2,13 +2,16 @@ use std::{fmt::Display, str::FromStr};
 
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::extract::{Query, State};
+use axum::{
+    extract::{Query, State},
+    response::Redirect,
+};
 use axum_extra::extract::Form;
 use reqwest::{header, StatusCode};
 use serde::{Deserialize, Deserializer};
 
 use crate::{
-    db,
+    db::{self, SoftDeleteAction},
     factuur::{self, Factuur, FactuurForm},
     server::AppState,
     Page,
@@ -121,28 +124,19 @@ pub async fn post(
         }
     };
 
-    let headers = [
-        (header::CONTENT_TYPE, "application/pdf".to_owned()),
-        (
-            header::CONTENT_DISPOSITION,
-            format!(
-                "attachment; filename=\"Factuur {} {}.pdf\"",
-                factuur.client.name, factuur.nummer
-            ),
-        ),
-    ];
-
-    Ok((headers, pdf))
+    Ok(Redirect::to(
+        format!("/facturen?n={}#{}", factuur.nummer, factuur.nummer).as_str(),
+    ))
 }
 
 #[derive(Debug, Deserialize)]
-pub struct FactuurDownloadParams {
+pub struct FactuurActionParams {
     factuur: usize,
 }
 
 pub async fn download(
     State(state): State<AppState>,
-    Query(params): Query<FactuurDownloadParams>,
+    Query(params): Query<FactuurActionParams>,
 ) -> impl IntoResponse {
     let mut conn = state.db.acquire().await.unwrap();
     let (name, pdf) = match db::get_pdf(&mut conn, params.factuur as u32).await {
@@ -168,4 +162,48 @@ pub async fn download(
     ];
 
     Ok((headers, pdf))
+}
+
+pub async fn delete(
+    State(state): State<AppState>,
+    Query(params): Query<FactuurActionParams>,
+) -> impl IntoResponse {
+    let mut conn = state.db.acquire().await.unwrap();
+    match db::soft_delete_invoice(&mut conn, params.factuur as u32, SoftDeleteAction::Delete).await
+    {
+        Ok(_) => Ok(Redirect::to("/facturen")),
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!(
+                    "Hey, er ging iets mis bij het verwijderen van de factuur uit de database. \
+                    Laat dit even zien aan Max:\n\n {}",
+                    err
+                ),
+            ))
+        }
+    }
+}
+
+pub async fn restore(
+    State(state): State<AppState>,
+    Query(params): Query<FactuurActionParams>,
+) -> impl IntoResponse {
+    let mut conn = state.db.acquire().await.unwrap();
+    match db::soft_delete_invoice(&mut conn, params.factuur as u32, SoftDeleteAction::Restore).await
+    {
+        Ok(_) => Ok(Redirect::to(
+            format!("/facturen?n={}#{}", params.factuur, params.factuur).as_str(),
+        )),
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!(
+                    "Hey, er ging iets mis bij het herstellen van de factuur uit de database. \
+                    Laat dit even zien aan Max:\n\n {}",
+                    err
+                ),
+            ))
+        }
+    }
 }

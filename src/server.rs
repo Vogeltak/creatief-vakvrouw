@@ -109,7 +109,13 @@ pub async fn run() -> Result<()> {
         .route("/factuur", get(routes::factuur::get))
         .route("/factuur", post(routes::factuur::post))
         .route("/download", get(routes::factuur::download))
+        .route("/delete", get(routes::factuur::delete))
+        .route("/restore", get(routes::factuur::restore))
         .route("/facturen", get(routes::report::history_get))
+        .route(
+            "/verwijderde_facturen",
+            get(routes::report::deleted_invoices),
+        )
         .route("/btw", get(routes::report::btw_get))
         .route_layer(RequireAuthorizationLayer::<usize, User>::login_or_redirect(
             Arc::new("/login".into()),
@@ -146,7 +152,7 @@ async fn root_get(State(state): State<AppState>) -> PortaalTemplate {
         Err(_) => vec![],
     };
 
-    let mut invoices = match db::get_invoices(&mut conn).await {
+    let mut invoices = match db::get_invoices(&mut conn, db::InvoiceStatus::Active).await {
         Ok(invoices) => invoices,
         Err(err) => {
             println!("Failed to fetch invoices for dashboard: {err}");

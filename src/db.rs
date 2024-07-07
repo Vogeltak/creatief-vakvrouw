@@ -70,13 +70,27 @@ VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )
     Ok(())
 }
 
-pub async fn get_invoices(conn: &mut SqliteConnection) -> Result<Vec<Factuur>> {
+pub enum InvoiceStatus {
+    Active,
+    Deleted,
+}
+
+pub async fn get_invoices(
+    conn: &mut SqliteConnection,
+    invoice_status: InvoiceStatus,
+) -> Result<Vec<Factuur>> {
+    let deleted = match invoice_status {
+        InvoiceStatus::Active => 0,
+        InvoiceStatus::Deleted => 1,
+    };
+
     let invoices = sqlx::query!(
         r#"
 SELECT nummer, client.name, client.address, client.zip, work_items, subtotal, btw, total, created_at FROM invoice
 INNER JOIN client ON client.id = invoice.client
-WHERE deleted = 0
-        "#
+WHERE deleted = ?
+        "#,
+        deleted
     )
     .fetch_all(&mut *conn)
     .await?;
@@ -156,4 +170,34 @@ WHERE nummer = ?
         format!("Factuur {} {}.pdf", res.name.clone(), factuur_nummer),
         pdf.file,
     ))
+}
+
+pub enum SoftDeleteAction {
+    Restore,
+    Delete,
+}
+
+pub async fn soft_delete_invoice(
+    conn: &mut SqliteConnection,
+    factuur_nummer: u32,
+    action: SoftDeleteAction,
+) -> Result<()> {
+    let deleted = match action {
+        SoftDeleteAction::Restore => 0,
+        SoftDeleteAction::Delete => 1,
+    };
+
+    sqlx::query!(
+        r#"
+UPDATE invoice
+SET deleted = ?
+WHERE nummer = ?
+        "#,
+        deleted,
+        factuur_nummer
+    )
+    .execute(&mut *conn)
+    .await?;
+
+    Ok(())
 }

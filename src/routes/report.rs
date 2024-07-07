@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use askama::Template;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use chrono::Datelike;
+use serde::Deserialize;
 
 use crate::{
     db,
@@ -16,6 +17,7 @@ use crate::{
 pub struct HistoryTemplate {
     page: Page,
     grouped_invoices: Vec<(YearMonth, Vec<Factuur>)>,
+    focus: Option<usize>,
 }
 
 #[derive(Template)]
@@ -23,6 +25,13 @@ pub struct HistoryTemplate {
 pub struct BtwTemplate {
     page: Page,
     quarters: Vec<(Quarter, Btw)>,
+}
+
+#[derive(Template)]
+#[template(path = "deleted.html")]
+pub struct DeletedInvoicesTemplate {
+    page: Page,
+    invoices: Vec<Factuur>,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -57,9 +66,17 @@ impl std::fmt::Display for YearMonth {
     }
 }
 
-pub async fn history_get(State(state): State<AppState>) -> HistoryTemplate {
+#[derive(Debug, Deserialize)]
+pub struct HistoryParams {
+    n: Option<usize>,
+}
+
+pub async fn history_get(
+    State(state): State<AppState>,
+    Query(params): Query<HistoryParams>,
+) -> HistoryTemplate {
     let mut conn = state.db.acquire().await.unwrap();
-    let mut invoices = match db::get_invoices(&mut conn).await {
+    let mut invoices = match db::get_invoices(&mut conn, db::InvoiceStatus::Active).await {
         Ok(invoices) => invoices,
         Err(err) => {
             println!("Failed to fetch invoices from DB: {:?}", err);
@@ -92,6 +109,7 @@ pub async fn history_get(State(state): State<AppState>) -> HistoryTemplate {
     HistoryTemplate {
         page: Page::Facturen,
         grouped_invoices,
+        focus: params.n,
     }
 }
 
@@ -128,7 +146,7 @@ pub struct Btw {
 
 pub async fn btw_get(State(state): State<AppState>) -> BtwTemplate {
     let mut conn = state.db.acquire().await.unwrap();
-    let mut invoices = match db::get_invoices(&mut conn).await {
+    let mut invoices = match db::get_invoices(&mut conn, db::InvoiceStatus::Active).await {
         Ok(invoices) => invoices,
         Err(err) => {
             println!("Failed to fetch invoices from DB: {:?}", err);
@@ -173,5 +191,24 @@ pub async fn btw_get(State(state): State<AppState>) -> BtwTemplate {
     BtwTemplate {
         page: Page::Btw,
         quarters: grouped_invoices,
+    }
+}
+
+pub async fn deleted_invoices(State(state): State<AppState>) -> DeletedInvoicesTemplate {
+    let mut conn = state.db.acquire().await.unwrap();
+    let mut invoices = match db::get_invoices(&mut conn, db::InvoiceStatus::Deleted).await {
+        Ok(invoices) => invoices,
+        Err(err) => {
+            println!("Failed to fetch deleted invoices from DB: {:?}", err);
+            vec![]
+        }
+    };
+
+    invoices.sort_by_key(|i| i.nummer);
+    invoices.reverse();
+
+    DeletedInvoicesTemplate {
+        page: Page::Facturen,
+        invoices,
     }
 }

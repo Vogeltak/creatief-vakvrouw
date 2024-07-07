@@ -14,6 +14,7 @@
             --shadow-color-card: #666;
             --tag-color: #e6e6e6;
             --accent-color: #3f5db3;
+            --danger-color: #b43f3f;
         }
         body {
             background-color: var(--main-bg-color);
@@ -78,6 +79,13 @@
         }
         a:visited {
             color: var(--accent-color);
+        }
+        a.delete {
+            color: var(--danger-color);
+            text-decoration: none;
+        }
+        a.delete:hover {
+            text-decoration: underline;
         }
         input {
             border: 1px solid var(--main-color);
