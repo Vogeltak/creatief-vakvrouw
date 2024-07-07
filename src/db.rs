@@ -75,6 +75,7 @@ pub async fn get_invoices(conn: &mut SqliteConnection) -> Result<Vec<Factuur>> {
         r#"
 SELECT nummer, client.name, client.address, client.zip, work_items, subtotal, btw, total, created_at FROM invoice
 INNER JOIN client ON client.id = invoice.client
+WHERE deleted = 0
         "#
     )
     .fetch_all(&mut *conn)
