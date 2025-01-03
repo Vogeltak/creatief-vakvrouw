@@ -26,20 +26,22 @@ use sqlx::sqlite::SqlitePool;
 use tokio::sync::RwLock;
 
 pub mod filters {
-    use chrono::{TimeZone, Utc};
+    use chrono::NaiveDateTime;
 
     use crate::factuur::Factuur;
 
     pub fn date<T: std::fmt::Display>(s: T) -> ::askama::Result<String> {
         // Entries ingested from Rust are explicitly set to RFC 3339 format
-        match Utc.datetime_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S.%f UTC") {
-            Ok(d) => Ok(format!("{}", d.format("%Y-%m-%d"))),
-            Err(_) => match Utc.datetime_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S UTC") {
-                // Fallback to default SQLite datetime() output
-                Ok(d) => Ok(format!("{}", d.format("%Y-%m-%d"))),
-                // Otherwise, just parrot back the original format
-                Err(_) => Ok(format!("{s}")),
-            },
+        match NaiveDateTime::parse_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S.%f UTC") {
+            Ok(d) => Ok(format!("{}", d.and_utc().format("%Y-%m-%d"))),
+            Err(_) => {
+                match NaiveDateTime::parse_from_str(&s.to_string(), "%Y-%m-%d %H:%M:%S UTC") {
+                    // Fallback to default SQLite datetime() output
+                    Ok(d) => Ok(format!("{}", d.and_utc().format("%Y-%m-%d"))),
+                    // Otherwise, just parrot back the original format
+                    Err(_) => Ok(format!("{s}")),
+                }
+            }
         }
     }
 
@@ -147,10 +149,7 @@ struct PortaalTemplate {
 
 async fn root_get(State(state): State<AppState>) -> PortaalTemplate {
     let mut conn = state.db.acquire().await.unwrap();
-    let clients = match db::get_all_clients(&mut conn).await {
-        Ok(clients) => clients,
-        Err(_) => vec![],
-    };
+    let clients = db::get_all_clients(&mut conn).await.unwrap_or_default();
 
     let mut invoices = match db::get_invoices(&mut conn, db::InvoiceStatus::Active).await {
         Ok(invoices) => invoices,

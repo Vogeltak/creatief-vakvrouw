@@ -34,16 +34,10 @@ pub async fn get(
 
     let client = match params.client {
         None => None,
-        Some(key) => match db::get_client(&mut conn, &key).await {
-            Ok(client) => client,
-            Err(_) => None,
-        },
+        Some(key) => db::get_client(&mut conn, &key).await.unwrap_or_default(),
     };
 
-    let most_recent_invoice_id = match db::most_recent_invoice(&mut conn).await {
-        Ok(i) => i,
-        Err(_) => None,
-    };
+    let most_recent_invoice_id = db::most_recent_invoice(&mut conn).await.unwrap_or_default();
 
     FactuurTemplate {
         page: Page::Factuur,
@@ -172,16 +166,14 @@ pub async fn delete(
     match db::soft_delete_invoice(&mut conn, params.factuur as u32, SoftDeleteAction::Delete).await
     {
         Ok(_) => Ok(Redirect::to("/facturen")),
-        Err(err) => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!(
-                    "Hey, er ging iets mis bij het verwijderen van de factuur uit de database. \
+        Err(err) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!(
+                "Hey, er ging iets mis bij het verwijderen van de factuur uit de database. \
                     Laat dit even zien aan Max:\n\n {}",
-                    err
-                ),
-            ))
-        }
+                err
+            ),
+        )),
     }
 }
 
@@ -195,15 +187,13 @@ pub async fn restore(
         Ok(_) => Ok(Redirect::to(
             format!("/facturen?n={}#{}", params.factuur, params.factuur).as_str(),
         )),
-        Err(err) => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!(
-                    "Hey, er ging iets mis bij het herstellen van de factuur uit de database. \
+        Err(err) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!(
+                "Hey, er ging iets mis bij het herstellen van de factuur uit de database. \
                     Laat dit even zien aan Max:\n\n {}",
-                    err
-                ),
-            ))
-        }
+                err
+            ),
+        )),
     }
 }

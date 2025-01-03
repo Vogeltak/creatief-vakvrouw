@@ -98,10 +98,8 @@ pub async fn history_get(
         grouped_invoices.entry(year_month).or_insert(vec![]).push(i);
     }
 
-    let mut grouped_invoices: Vec<(YearMonth, Vec<Factuur>)> = grouped_invoices
-        .into_iter()
-        .map(|(ym, invoices)| (ym, invoices))
-        .collect();
+    let mut grouped_invoices: Vec<(YearMonth, Vec<Factuur>)> =
+        grouped_invoices.into_iter().collect();
 
     grouped_invoices.sort_by(|(ym1, _), (ym2, _)| ym1.cmp(ym2));
     grouped_invoices.reverse();

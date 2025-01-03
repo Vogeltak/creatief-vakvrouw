@@ -43,15 +43,11 @@ pub async fn post(
 
     let mut conn = state.db.acquire().await.unwrap();
 
-    let anita = match db::get_client(&mut conn, "V.O.F. De Nieuwe Anita").await {
-        Ok(a) => a,
-        Err(_) => None,
-    };
+    let anita = db::get_client(&mut conn, "V.O.F. De Nieuwe Anita")
+        .await
+        .unwrap_or_default();
 
-    let most_recent_invoice_id = match db::most_recent_invoice(&mut conn).await {
-        Ok(i) => i,
-        Err(_) => None,
-    };
+    let most_recent_invoice_id = db::most_recent_invoice(&mut conn).await.unwrap_or_default();
 
     FactuurTemplate {
         page: Page::Factuur,
