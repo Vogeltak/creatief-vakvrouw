@@ -2,19 +2,19 @@ use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
+use crate::{Page, factuur};
 use crate::{db, routes};
-use crate::{factuur, Page};
 
 use anyhow::Result;
 use askama::Template;
 
 use axum::{
+    Router, Server,
     extract::State,
     routing::{get, post},
-    Router, Server,
 };
-use axum_login::axum_sessions::async_session::MemoryStore as SessionMemoryStore;
 use axum_login::axum_sessions::SessionLayer;
+use axum_login::axum_sessions::async_session::MemoryStore as SessionMemoryStore;
 use axum_login::memory_store::MemoryStore as AuthMemoryStore;
 use axum_login::secrecy::SecretVec;
 use axum_login::{AuthLayer, AuthUser, RequireAuthorizationLayer};
@@ -92,7 +92,7 @@ pub async fn run() -> Result<()> {
         user: user.clone(),
     };
 
-    let secret = rand::thread_rng().gen::<[u8; 64]>();
+    let secret = rand::thread_rng().r#gen::<[u8; 64]>();
 
     let session_store = SessionMemoryStore::new();
     let session_layer = SessionLayer::new(session_store, &secret);

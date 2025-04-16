@@ -13,7 +13,7 @@ async fn main() -> Result<()> {
 
     match arg.command {
         cli::Commands::Anita { month, name } => get_anita(month, name).await,
-        cli::Commands::Server {} => server::run().await,
+        cli::Commands::Server => server::run().await,
     }
 }
 
